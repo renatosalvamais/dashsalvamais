@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CadastrarColaborador from "./pages/CadastrarColaborador";
+import ImportarPlanilha from "./pages/ImportarPlanilha";
 import RemoverColaborador from "./pages/RemoverColaborador";
 import ListaCompleta from "./pages/ListaCompleta";
 import ProgramaSupera from "./pages/ProgramaSupera";
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cadastrar" element={<CadastrarColaborador />} />
+          <Route path="/importar-planilha" element={<ImportarPlanilha />} />
           <Route path="/remover" element={<RemoverColaborador />} />
           <Route path="/lista" element={<ListaCompleta />} />
           <Route path="/programa" element={<ProgramaSupera />} />

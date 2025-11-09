@@ -1,12 +1,13 @@
 import { ReactNode } from "react";
-import { Home, UserPlus, UserMinus, List, Settings } from "lucide-react";
+import { Home, UserPlus, UserMinus, List, Settings, FileSpreadsheet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import logo from "@/assets/logo.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Cadastrar Colaborador", url: "/cadastrar", icon: UserPlus },
+  { title: "Cadastro Manual", url: "/cadastrar", icon: UserPlus },
+  { title: "Importar Planilha", url: "/importar-planilha", icon: FileSpreadsheet },
   { title: "Remover Colaborador", url: "/remover", icon: UserMinus },
   { title: "Lista Completa", url: "/lista", icon: List },
   { title: "Programa Supera", url: "/programa", icon: Settings },
