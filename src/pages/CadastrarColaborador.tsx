@@ -84,8 +84,12 @@ const CadastrarColaborador = () => {
                     <th className="text-left p-3 text-sm font-semibold">Nome Completo</th>
                     <th className="text-left p-3 text-sm font-semibold">CPF</th>
                     <th className="text-left p-3 text-sm font-semibold">Telefone (DDD)</th>
-                    <th className="text-left p-3 text-sm font-semibold">E-mail</th>
-                    <th className="text-left p-3 text-sm font-semibold">Dependentes</th>
+                    <th className="text-left p-3 text-sm font-semibold">Dep. 1</th>
+                    <th className="text-left p-3 text-sm font-semibold">CPF 1</th>
+                    <th className="text-left p-3 text-sm font-semibold">Dep. 2</th>
+                    <th className="text-left p-3 text-sm font-semibold">CPF 2</th>
+                    <th className="text-left p-3 text-sm font-semibold">Dep. 3</th>
+                    <th className="text-left p-3 text-sm font-semibold">CPF 3</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,21 +116,39 @@ const CadastrarColaborador = () => {
                       </td>
                       <td className="p-3">
                         <Input
-                          placeholder="email@exemplo.com"
-                          type="email"
+                          placeholder="Nome dep. 1"
                           className="bg-muted/50"
                         />
                       </td>
                       <td className="p-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                        >
-                          <Users className="h-4 w-4" />
-                          Gerenciar
-                        </Button>
+                        <Input
+                          placeholder="000.000.000-00"
+                          className="bg-muted/50"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <Input
+                          placeholder="Nome dep. 2"
+                          className="bg-muted/50"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <Input
+                          placeholder="000.000.000-00"
+                          className="bg-muted/50"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <Input
+                          placeholder="Nome dep. 3"
+                          className="bg-muted/50"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <Input
+                          placeholder="000.000.000-00"
+                          className="bg-muted/50"
+                        />
                       </td>
                     </tr>
                   ))}
@@ -156,6 +178,7 @@ const CadastrarColaborador = () => {
             <div className="flex justify-center">
               <Button
                 type="submit"
+                variant="search"
                 size="lg"
                 className="px-12"
               >

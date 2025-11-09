@@ -35,7 +35,7 @@ const RemoverColaborador = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
             />
-            <Button className="gap-2">
+            <Button variant="search" className="gap-2">
               <Search className="h-4 w-4" />
               Buscar
             </Button>
