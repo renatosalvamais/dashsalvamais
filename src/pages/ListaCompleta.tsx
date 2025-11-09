@@ -4,41 +4,50 @@ import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Trash2, ChevronRight } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const colaboradoresData = [
   {
     nome: "JOAO DE SOUZA DA SILVA",
-    cpf: "60777327023",
-    email: "ldourado2026@gmail.com",
-    telefone: "91988439588",
+    cpf: "607.773.270-23",
+    telefone: "(91) 98843-9588",
+    dependentes: 2,
     status: "Ativo",
-    plano: "Familiar",
-    data: "08/08/2025",
+    dataCadastro: "08/08/2025",
+    dataExclusao: "-",
   },
   {
     nome: "Joao Paulo Souza Dev",
-    cpf: "53475307073",
-    email: "ldourado1981@gmail.com",
-    telefone: "91988439574",
+    cpf: "534.753.070-73",
+    telefone: "(91) 98843-9574",
+    dependentes: 0,
     status: "Removido",
-    plano: "Familiar",
-    data: "04/08/2025",
+    dataCadastro: "04/08/2025",
+    dataExclusao: "09/11/2025",
   },
   {
     nome: "LUIZ DOURADO DIAS JUNIOR",
-    cpf: "79118568009",
-    email: "cleonutri20@gmail.com",
-    telefone: "91988439574",
+    cpf: "791.185.680-09",
+    telefone: "(91) 98843-9574",
+    dependentes: 3,
     status: "Ativo",
-    plano: "Familiar",
-    data: "31/07/2025",
+    dataCadastro: "31/07/2025",
+    dataExclusao: "-",
   },
 ];
 
 const ListaCompleta = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { toast } = useToast();
+
+  const handleDelete = (nome: string) => {
+    toast({
+      title: "Colaborador excluído",
+      description: `${nome} foi excluído com sucesso.`,
+    });
+  };
 
   return (
     <Layout>
@@ -101,29 +110,26 @@ const ListaCompleta = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left p-3 text-sm font-semibold"></th>
                   <th className="text-left p-3 text-sm font-semibold">Nome</th>
-                  <th className="text-left p-3 text-sm font-semibold">E-mail</th>
+                  <th className="text-left p-3 text-sm font-semibold">CPF</th>
                   <th className="text-left p-3 text-sm font-semibold">Telefone</th>
+                  <th className="text-left p-3 text-sm font-semibold">Qtd. Dependentes</th>
                   <th className="text-left p-3 text-sm font-semibold">Status</th>
-                  <th className="text-left p-3 text-sm font-semibold">Tipo de Plano</th>
+                  <th className="text-left p-3 text-sm font-semibold">Ativo</th>
                   <th className="text-left p-3 text-sm font-semibold">Data Cadastro</th>
+                  <th className="text-left p-3 text-sm font-semibold">Data Exclusão</th>
+                  <th className="text-left p-3 text-sm font-semibold">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {colaboradoresData.map((colab, index) => (
                   <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
                     <td className="p-3">
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      <div className="font-medium">{colab.nome}</div>
                     </td>
-                    <td className="p-3">
-                      <div>
-                        <div className="font-medium">{colab.nome}</div>
-                        <div className="text-sm text-muted-foreground">CPF: {colab.cpf}</div>
-                      </div>
-                    </td>
-                    <td className="p-3 text-sm">{colab.email}</td>
+                    <td className="p-3 text-sm">{colab.cpf}</td>
                     <td className="p-3 text-sm">{colab.telefone}</td>
+                    <td className="p-3 text-sm text-center">{colab.dependentes}</td>
                     <td className="p-3">
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
@@ -136,11 +142,29 @@ const ListaCompleta = () => {
                       </span>
                     </td>
                     <td className="p-3">
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-warning text-warning-foreground">
-                        {colab.plano}
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                          colab.status === "Ativo"
+                            ? "bg-success text-success-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {colab.status === "Ativo" ? "Sim" : "Não"}
                       </span>
                     </td>
-                    <td className="p-3 text-sm">{colab.data}</td>
+                    <td className="p-3 text-sm">{colab.dataCadastro}</td>
+                    <td className="p-3 text-sm">{colab.dataExclusao}</td>
+                    <td className="p-3">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => handleDelete(colab.nome)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Excluir
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
