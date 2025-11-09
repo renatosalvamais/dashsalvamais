@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Home, FileText } from "lucide-react";
+import { Home, FileText, ScrollText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
@@ -8,6 +8,7 @@ import logo from "@/assets/logo.png";
 const menuItems = [
   { title: "Home", url: "/admin/dashboard", icon: Home },
   { title: "Gerador de Propostas", url: "/admin/gerador", icon: FileText },
+  { title: "Propostas", url: "/admin/propostas", icon: ScrollText },
 ];
 
 interface AdminLayoutProps {
