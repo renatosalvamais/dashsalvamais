@@ -7,7 +7,7 @@ import logo from "@/assets/logo.png";
 
 const menuItems = [
   { title: "Home", url: "/admin/dashboard", icon: Home },
-  { title: "Gerador", url: "/admin/gerador", icon: FileText },
+  { title: "Gerador de Propostas", url: "/admin/gerador", icon: FileText },
 ];
 
 interface AdminLayoutProps {
