@@ -1,24 +1,19 @@
 import { ReactNode } from "react";
-import { Home, UserPlus, UserMinus, List, Settings, FileSpreadsheet } from "lucide-react";
+import { Home } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import logo from "@/assets/logo.png";
 
 const menuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Cadastro Manual", url: "/cadastrar", icon: UserPlus },
-  { title: "Importar Planilha", url: "/importar-planilha", icon: FileSpreadsheet },
-  { title: "Remover Colaborador", url: "/remover", icon: UserMinus },
-  { title: "Lista Completa", url: "/lista", icon: List },
-  { title: "Programa Supera", url: "/programa", icon: Settings },
+  { title: "Home", url: "/admin/dashboard", icon: Home },
 ];
 
-interface LayoutProps {
+interface AdminLayoutProps {
   children: ReactNode;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
