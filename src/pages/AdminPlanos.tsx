@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Plus, Check, X } from "lucide-react";
+import { Pencil, Plus, Check, X, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Product {
@@ -72,12 +72,34 @@ export default function AdminPlanos() {
     }
   };
 
+  const removeProduct = (id: string) => {
+    setProducts(products.filter(p => p.id !== id));
+    toast({
+      title: "Produto removido",
+      description: "O produto foi removido com sucesso.",
+    });
+  };
+
+  const moveUp = (index: number) => {
+    if (index === 0) return;
+    const newProducts = [...products];
+    [newProducts[index - 1], newProducts[index]] = [newProducts[index], newProducts[index - 1]];
+    setProducts(newProducts);
+  };
+
+  const moveDown = (index: number) => {
+    if (index === products.length - 1) return;
+    const newProducts = [...products];
+    [newProducts[index + 1], newProducts[index]] = [newProducts[index], newProducts[index + 1]];
+    setProducts(newProducts);
+  };
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-foreground">Planos</h1>
-          <Button onClick={() => setShowNewProduct(true)}>
+          <h1 className="text-2xl font-bold text-foreground">Planos</h1>
+          <Button onClick={() => setShowNewProduct(true)} size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Cadastrar Produto
           </Button>
@@ -85,38 +107,40 @@ export default function AdminPlanos() {
 
         {showNewProduct && (
           <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle>Novo Produto</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Novo Produto</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Nome do Produto</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nome do Produto</Label>
                   <Input
                     value={newProduct.name}
                     onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                     placeholder="Nome do produto"
+                    className="h-8 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Preço (R$)</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Preço (R$)</Label>
                   <Input
                     value={newProduct.price}
                     onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                     placeholder="0,00"
+                    className="h-8 text-sm"
                   />
                 </div>
               </div>
-              <div className="flex gap-2 mt-4">
-                <Button onClick={addProduct}>
-                  <Check className="h-4 w-4 mr-2" />
+              <div className="flex gap-2 mt-3">
+                <Button onClick={addProduct} size="sm">
+                  <Check className="h-3 w-3 mr-1" />
                   Adicionar
                 </Button>
-                <Button variant="outline" onClick={() => {
+                <Button size="sm" variant="outline" onClick={() => {
                   setShowNewProduct(false);
                   setNewProduct({ name: "", price: "" });
                 }}>
-                  <X className="h-4 w-4 mr-2" />
+                  <X className="h-3 w-3 mr-1" />
                   Cancelar
                 </Button>
               </div>
@@ -125,58 +149,108 @@ export default function AdminPlanos() {
         )}
 
         <Card>
-          <CardHeader>
-            <CardTitle>Preços Unitários</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Preços Unitários</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {products.map((product) => (
-                <div
+            <div className="grid grid-cols-3 gap-3">
+              {products.map((product, index) => (
+                <Card
                   key={product.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="border border-border hover:border-primary/50 transition-colors"
                 >
-                  <span className="font-medium text-foreground">{product.name}</span>
-                  <div className="flex items-center gap-2">
-                    {editingId === product.id ? (
-                      <>
-                        <span className="text-muted-foreground">R$</span>
-                        <Input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          className="w-24"
-                          autoFocus
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => saveEdit(product.id)}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={cancelEdit}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="font-semibold text-primary">
-                          R$ {product.price}
+                  <CardContent className="p-3">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-medium text-sm text-foreground line-clamp-2">
+                          {product.name}
                         </span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => startEdit(product)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                        <div className="flex gap-0.5 flex-shrink-0">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => moveUp(index)}
+                            disabled={index === 0}
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => moveDown(index)}
+                            disabled={index === products.length - 1}
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {editingId === product.id ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">R$</span>
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="h-7 text-sm flex-1"
+                            autoFocus
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-base font-semibold text-primary">
+                          R$ {product.price}
+                        </div>
+                      )}
+
+                      <div className="flex gap-1">
+                        {editingId === product.id ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 flex-1 text-xs"
+                              onClick={() => saveEdit(product.id)}
+                            >
+                              <Check className="h-3 w-3 mr-1" />
+                              Salvar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 flex-1 text-xs"
+                              onClick={cancelEdit}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Cancelar
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 flex-1 text-xs"
+                              onClick={() => startEdit(product)}
+                            >
+                              <Pencil className="h-3 w-3 mr-1" />
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 flex-1 text-xs text-destructive hover:text-destructive"
+                              onClick={() => removeProduct(product.id)}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Remover
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </CardContent>
