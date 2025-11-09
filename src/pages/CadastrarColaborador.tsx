@@ -17,10 +17,9 @@ interface Colaborador {
 
 const CadastrarColaborador = () => {
   const navigate = useNavigate();
-  const [tipoPlano, setTipoPlano] = useState("familiar");
-  const [colaboradores, setColaboradores] = useState<Colaborador[]>([
-    { nome: "", cpf: "", telefone: "", email: "" },
-  ]);
+  const [colaboradores, setColaboradores] = useState<Colaborador[]>(
+    Array(5).fill(null).map(() => ({ nome: "", cpf: "", telefone: "", email: "" }))
+  );
 
   const adicionarLinhas = () => {
     const novasLinhas = Array(5).fill(null).map(() => ({
@@ -30,6 +29,12 @@ const CadastrarColaborador = () => {
       email: "",
     }));
     setColaboradores([...colaboradores, ...novasLinhas]);
+  };
+
+  const limparLinhas = () => {
+    setColaboradores(
+      Array(5).fill(null).map(() => ({ nome: "", cpf: "", telefone: "", email: "" }))
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,7 +59,7 @@ const CadastrarColaborador = () => {
               Cadastrar Colaboradores
             </h1>
             <p className="text-muted-foreground">
-              Empresa: teste - CNPJ: 51.028.224/0001-41
+              Empresa: Salva+ Benefícios - CNPJ: 34.225.216/0001-77
             </p>
           </div>
         </div>
@@ -65,17 +70,10 @@ const CadastrarColaborador = () => {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="tipo-plano">Tipo de Plano</Label>
-              <Select value={tipoPlano} onValueChange={setTipoPlano}>
-                <SelectTrigger className="bg-primary text-primary-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="individual">Individual</SelectItem>
-                  <SelectItem value="familiar">Familiar + PET c/ dependentes</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Total de linhas disponíveis: <span className="font-semibold">{colaboradores.length}</span>
+              </p>
             </div>
 
             <div className="overflow-x-auto">
@@ -136,14 +134,24 @@ const CadastrarColaborador = () => {
               </table>
             </div>
 
-            <Button
-              type="button"
-              onClick={adicionarLinhas}
-              className="w-full bg-success hover:bg-success/90 text-success-foreground gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              + Adicionar 5 Linhas
-            </Button>
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                onClick={adicionarLinhas}
+                className="flex-1 bg-success hover:bg-success/90 text-success-foreground gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar Mais Linhas
+              </Button>
+              <Button
+                type="button"
+                onClick={limparLinhas}
+                variant="outline"
+                className="flex-1 gap-2"
+              >
+                Limpar
+              </Button>
+            </div>
 
             <div className="flex justify-center">
               <Button

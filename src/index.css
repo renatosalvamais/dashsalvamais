@@ -44,17 +44,17 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
-    --sidebar-background: 250 60% 58%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 250 60% 58%;
-    --sidebar-accent: 250 65% 50%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 250 65% 50%;
-    --sidebar-ring: 0 0% 100%;
+    --sidebar-background: 240 48% 89%;
+    --sidebar-foreground: 240 10% 15%;
+    --sidebar-primary: 240 10% 15%;
+    --sidebar-primary-foreground: 240 48% 89%;
+    --sidebar-accent: 240 48% 80%;
+    --sidebar-accent-foreground: 240 10% 15%;
+    --sidebar-border: 240 48% 80%;
+    --sidebar-ring: 240 10% 15%;
 
-    --header-background: 250 60% 58%;
-    --header-foreground: 0 0% 100%;
+    --header-background: 240 48% 89%;
+    --header-foreground: 240 10% 15%;
 
     --stat-total: 250 50% 70%;
     --stat-active: 142 60% 50%;
@@ -97,17 +97,17 @@ All colors MUST be HSL.
     --input: 240 10% 20%;
     --ring: 250 60% 58%;
 
-    --sidebar-background: 250 60% 58%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 250 60% 58%;
-    --sidebar-accent: 250 65% 50%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 250 65% 50%;
-    --sidebar-ring: 0 0% 100%;
+    --sidebar-background: 240 48% 89%;
+    --sidebar-foreground: 240 10% 15%;
+    --sidebar-primary: 240 10% 15%;
+    --sidebar-primary-foreground: 240 48% 89%;
+    --sidebar-accent: 240 48% 80%;
+    --sidebar-accent-foreground: 240 10% 15%;
+    --sidebar-border: 240 48% 80%;
+    --sidebar-ring: 240 10% 15%;
 
-    --header-background: 250 60% 58%;
-    --header-foreground: 0 0% 100%;
+    --header-background: 240 48% 89%;
+    --header-foreground: 240 10% 15%;
 
     --stat-total: 250 50% 70%;
     --stat-active: 142 60% 50%;

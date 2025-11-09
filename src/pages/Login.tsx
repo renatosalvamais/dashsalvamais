@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import logo from "@/assets/logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -32,9 +33,7 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl shadow-2xl p-8 border border-border">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary mb-2">
-              Salvai Benefícios
-            </h1>
+            <img src={logo} alt="Salva+ Benefícios" className="h-16 mx-auto mb-4" />
             <p className="text-muted-foreground">
               Sistema de Gestão de RH
             </p>
