@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminGerador from "./pages/AdminGerador";
 import AdminPropostas from "./pages/AdminPropostas";
+import CadastrarEmpresa from "./pages/CadastrarEmpresa";
 import CadastrarColaborador from "./pages/CadastrarColaborador";
 import ImportarPlanilha from "./pages/ImportarPlanilha";
 import RemoverColaborador from "./pages/RemoverColaborador";
@@ -30,6 +31,7 @@ const App = () => (
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/gerador" element={<AdminGerador />} />
         <Route path="/admin/propostas" element={<AdminPropostas />} />
+        <Route path="/admin/cadastrar-empresa" element={<CadastrarEmpresa />} />
           <Route path="/cadastrar" element={<CadastrarColaborador />} />
           <Route path="/importar-planilha" element={<ImportarPlanilha />} />
           <Route path="/remover" element={<RemoverColaborador />} />
