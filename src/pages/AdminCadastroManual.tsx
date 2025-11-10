@@ -60,6 +60,14 @@ const AdminCadastroManual = () => {
     toast.success("Planilha XLS exportada com sucesso!");
   };
 
+  const handleExportSVA = () => {
+    if (!selectedEmpresa) {
+      toast.error("Selecione uma empresa primeiro!");
+      return;
+    }
+    toast.success("Arquivo SVA exportado com sucesso!");
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -235,7 +243,7 @@ const AdminCadastroManual = () => {
               </Button>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-4">
               <Button
                 type="button"
                 onClick={handleExport}
@@ -245,6 +253,16 @@ const AdminCadastroManual = () => {
               >
                 <FileDown className="h-5 w-5" />
                 EXPORTAR XLS
+              </Button>
+              <Button
+                type="button"
+                onClick={handleExportSVA}
+                variant="search"
+                size="lg"
+                className="px-12 gap-2"
+              >
+                <FileDown className="h-5 w-5" />
+                EXPORTAR SVA
               </Button>
             </div>
           </div>
