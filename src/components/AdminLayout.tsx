@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Home, FileText, ScrollText, Building2, DollarSign } from "lucide-react";
+import { Home, FileText, ScrollText, Building2, DollarSign, Building } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
@@ -10,6 +10,7 @@ const menuItems = [
   { title: "Gerador de Planilhas", url: "/admin/gerador", icon: FileText },
   { title: "Gerador de Propostas", url: "/admin/propostas", icon: ScrollText },
   { title: "Cadastrar Empresa", url: "/admin/cadastrar-empresa", icon: Building2 },
+  { title: "Empresas", url: "/admin/empresas", icon: Building },
   { title: "Planos", url: "/admin/planos", icon: DollarSign },
 ];
 
