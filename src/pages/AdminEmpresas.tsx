@@ -17,6 +17,9 @@ interface Company {
   nome: string;
   cidade: string;
   totalVidas: number;
+  totalIndividual: number;
+  totalFamiliar: number;
+  plano: string;
   desconto: number;
   valor: number;
 }
@@ -29,6 +32,9 @@ const mockCompanies: Company[] = [
     nome: "Empresa Exemplo Ltda",
     cidade: "São Paulo",
     totalVidas: 150,
+    totalIndividual: 100,
+    totalFamiliar: 50,
+    plano: "Plano A",
     desconto: 10,
     valor: 5985.00,
   },
@@ -38,6 +44,9 @@ const mockCompanies: Company[] = [
     nome: "Tech Solutions S.A.",
     cidade: "Rio de Janeiro",
     totalVidas: 80,
+    totalIndividual: 60,
+    totalFamiliar: 20,
+    plano: "Plano B",
     desconto: 15,
     valor: 3192.00,
   },
@@ -47,6 +56,9 @@ const mockCompanies: Company[] = [
     nome: "Comércio Brasil LTDA",
     cidade: "Belo Horizonte",
     totalVidas: 200,
+    totalIndividual: 120,
+    totalFamiliar: 80,
+    plano: "Plano C",
     desconto: 8,
     valor: 7344.00,
   },
@@ -90,6 +102,9 @@ export default function AdminEmpresas() {
                 <TableHead className="text-xs">Nome</TableHead>
                 <TableHead className="text-xs">Cidade</TableHead>
                 <TableHead className="text-xs text-right">Total de Vidas</TableHead>
+                <TableHead className="text-xs text-right">Total Individual</TableHead>
+                <TableHead className="text-xs text-right">Total Familiar</TableHead>
+                <TableHead className="text-xs">Plano</TableHead>
                 <TableHead className="text-xs text-right">% Desconto</TableHead>
                 <TableHead className="text-xs text-right">Valor</TableHead>
               </TableRow>
@@ -102,6 +117,9 @@ export default function AdminEmpresas() {
                     <TableCell className="text-xs font-medium">{company.nome}</TableCell>
                     <TableCell className="text-xs">{company.cidade}</TableCell>
                     <TableCell className="text-xs text-right">{company.totalVidas}</TableCell>
+                    <TableCell className="text-xs text-right">{company.totalIndividual}</TableCell>
+                    <TableCell className="text-xs text-right">{company.totalFamiliar}</TableCell>
+                    <TableCell className="text-xs">{company.plano}</TableCell>
                     <TableCell className="text-xs text-right">{company.desconto}%</TableCell>
                     <TableCell className="text-xs text-right">
                       {company.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -110,7 +128,7 @@ export default function AdminEmpresas() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-xs text-muted-foreground py-8">
                     Nenhuma empresa encontrada
                   </TableCell>
                 </TableRow>
