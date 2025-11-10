@@ -11,6 +11,10 @@ import AdminPropostas from "./pages/AdminPropostas";
 import CadastrarEmpresa from "./pages/CadastrarEmpresa";
 import AdminPlanos from "./pages/AdminPlanos";
 import AdminEmpresas from "./pages/AdminEmpresas";
+import AdminCadastroManual from "./pages/AdminCadastroManual";
+import AdminImportarPlanilha from "./pages/AdminImportarPlanilha";
+import AdminRemoverColaborador from "./pages/AdminRemoverColaborador";
+import AdminListaCompleta from "./pages/AdminListaCompleta";
 import CadastrarColaborador from "./pages/CadastrarColaborador";
 import ImportarPlanilha from "./pages/ImportarPlanilha";
 import RemoverColaborador from "./pages/RemoverColaborador";
@@ -36,6 +40,10 @@ const App = () => (
         <Route path="/admin/cadastrar-empresa" element={<CadastrarEmpresa />} />
         <Route path="/admin/empresas" element={<AdminEmpresas />} />
         <Route path="/admin/planos" element={<AdminPlanos />} />
+        <Route path="/admin/cadastro-manual" element={<AdminCadastroManual />} />
+        <Route path="/admin/importar-planilha" element={<AdminImportarPlanilha />} />
+        <Route path="/admin/remover-colaborador" element={<AdminRemoverColaborador />} />
+        <Route path="/admin/lista-completa" element={<AdminListaCompleta />} />
           <Route path="/cadastrar" element={<CadastrarColaborador />} />
           <Route path="/importar-planilha" element={<ImportarPlanilha />} />
           <Route path="/remover" element={<RemoverColaborador />} />
