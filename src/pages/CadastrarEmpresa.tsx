@@ -4,9 +4,10 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { useCompanyStore } from "@/lib/companyStore";
+import { useCompanyStore, Company } from "@/lib/companyStore";
 import { usePlanStore } from "@/lib/planStore";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { normalizeCompanyName, formatCNPJ } from "@/lib/utils";
 import {
   Form,
   FormControl,
@@ -52,13 +53,41 @@ const formSchema = z.object({
 
 export default function CadastrarEmpresa() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
+  
   const addCompany = useCompanyStore((state) => state.addCompany);
+  const updateCompany = useCompanyStore((state) => state.updateCompany);
+  const companies = useCompanyStore((state) => state.companies);
   const getProductPrice = usePlanStore((state) => state.getProductPrice);
   const [valorTotal, setValorTotal] = useState(0);
 
+  const editingCompany = editId ? companies.find(c => c.id === editId) : null;
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: editingCompany ? {
+      cnpj: editingCompany.cnpj,
+      nomeEmpresa: editingCompany.nome,
+      endereco: editingCompany.endereco,
+      cidade: editingCompany.cidade,
+      contato: editingCompany.contato,
+      email: editingCompany.email,
+      telefone: editingCompany.telefone,
+      totalIndividual: editingCompany.totalIndividual.toString(),
+      totalFamiliar: editingCompany.totalFamiliar.toString(),
+      tipoPlano: editingCompany.plano.toUpperCase() as any,
+      desconto: editingCompany.desconto.toString(),
+      clubeDescontos: editingCompany.beneficios.clubeDescontos ? "sim" : "nao",
+      clubeDescontosDependente: editingCompany.beneficios.clubeDescontosDependente ? "sim" : "nao",
+      telemedicina: editingCompany.beneficios.telemedicina ? "sim" : "nao",
+      telemedicinaFamiliar: editingCompany.beneficios.telemedicinaFamiliar ? "sim" : "nao",
+      unimais: editingCompany.beneficios.unimais ? "sim" : "nao",
+      ubook: editingCompany.beneficios.ubook ? "sim" : "nao",
+      totalpass: editingCompany.beneficios.totalpass as any,
+      epharma: editingCompany.beneficios.epharma as any,
+      epharmaDependente: editingCompany.beneficios.epharmaDependente as any,
+    } : {
       cnpj: "",
       nomeEmpresa: "",
       endereco: "",
@@ -154,10 +183,12 @@ export default function CadastrarEmpresa() {
       CUSTOMIZADO: "Customizado",
     }[values.tipoPlano];
 
-    const newCompany = {
-      id: Date.now().toString(),
+    // Normalizar o nome da empresa: CAPSLOCK, sem acentos e sem caracteres especiais
+    const nomeNormalizado = normalizeCompanyName(values.nomeEmpresa);
+
+    const companyData = {
       cnpj: values.cnpj,
-      nome: values.nomeEmpresa,
+      nome: nomeNormalizado,
       endereco: values.endereco,
       cidade: values.cidade,
       contato: values.contato,
@@ -182,8 +213,17 @@ export default function CadastrarEmpresa() {
       },
     };
 
-    addCompany(newCompany);
-    toast.success("Empresa cadastrada com sucesso!");
+    if (editId) {
+      updateCompany(editId, companyData);
+      toast.success("Empresa atualizada com sucesso!");
+    } else {
+      addCompany({
+        id: Date.now().toString(),
+        ...companyData,
+      });
+      toast.success("Empresa cadastrada com sucesso!");
+    }
+    
     form.reset();
     navigate("/admin/empresas");
   }
@@ -192,9 +232,11 @@ export default function CadastrarEmpresa() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Cadastrar Empresa</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            {editId ? "Editar Empresa" : "Cadastrar Empresa"}
+          </h1>
           <p className="text-muted-foreground mt-2">
-            Cadastre uma nova empresa no sistema
+            {editId ? "Atualize os dados da empresa" : "Cadastre uma nova empresa no sistema"}
           </p>
         </div>
 

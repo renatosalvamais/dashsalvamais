@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Pencil } from "lucide-react";
 import { useCompanyStore } from "@/lib/companyStore";
+import { formatCNPJ } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -66,8 +70,22 @@ const mockCompanies: Company[] = [
 ];
 
 export default function AdminEmpresas() {
+  const navigate = useNavigate();
   const companies = useCompanyStore((state) => state.companies);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
+
+  const handleSelectCompany = (companyId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedCompanies([...selectedCompanies, companyId]);
+    } else {
+      setSelectedCompanies(selectedCompanies.filter(id => id !== companyId));
+    }
+  };
+
+  const handleEditCompany = (companyId: string) => {
+    navigate(`/admin/cadastrar-empresa?edit=${companyId}`);
+  };
 
   const filteredCompanies = companies.filter((company) =>
     company.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -99,6 +117,7 @@ export default function AdminEmpresas() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="text-xs whitespace-nowrap w-12"></TableHead>
                 <TableHead className="text-xs whitespace-nowrap">CNPJ</TableHead>
                 <TableHead className="text-xs whitespace-nowrap">Nome</TableHead>
                 <TableHead className="text-xs whitespace-nowrap">Cidade</TableHead>
@@ -108,13 +127,20 @@ export default function AdminEmpresas() {
                 <TableHead className="text-xs whitespace-nowrap">Plano</TableHead>
                 <TableHead className="text-xs text-right whitespace-nowrap">% Desconto</TableHead>
                 <TableHead className="text-xs text-right whitespace-nowrap">Valor</TableHead>
+                <TableHead className="text-xs text-center whitespace-nowrap">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredCompanies.length > 0 ? (
                 filteredCompanies.map((company) => (
                   <TableRow key={company.id}>
-                    <TableCell className="text-xs font-mono whitespace-nowrap">{company.cnpj}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">
+                      <Checkbox
+                        checked={selectedCompanies.includes(company.id)}
+                        onCheckedChange={(checked) => handleSelectCompany(company.id, checked as boolean)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-xs font-mono whitespace-nowrap">{formatCNPJ(company.cnpj)}</TableCell>
                     <TableCell className="text-xs font-medium whitespace-nowrap">{company.nome}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{company.cidade}</TableCell>
                     <TableCell className="text-xs text-right whitespace-nowrap">{company.totalVidas}</TableCell>
@@ -125,11 +151,21 @@ export default function AdminEmpresas() {
                     <TableCell className="text-xs text-right whitespace-nowrap">
                       {company.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </TableCell>
+                    <TableCell className="text-xs text-center whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditCompany(company.id)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-xs text-muted-foreground py-8">
+                  <TableCell colSpan={11} className="text-center text-xs text-muted-foreground py-8">
                     Nenhuma empresa encontrada
                   </TableCell>
                 </TableRow>
