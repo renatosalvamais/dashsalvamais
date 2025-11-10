@@ -94,34 +94,34 @@ export default function AdminEmpresas() {
           />
         </div>
 
-        <div className="border rounded-lg bg-card">
+        <div className="border rounded-lg bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-xs">CNPJ</TableHead>
-                <TableHead className="text-xs">Nome</TableHead>
-                <TableHead className="text-xs">Cidade</TableHead>
-                <TableHead className="text-xs text-right">Total de Vidas</TableHead>
-                <TableHead className="text-xs text-right">Total Individual</TableHead>
-                <TableHead className="text-xs text-right">Total Familiar</TableHead>
-                <TableHead className="text-xs">Plano</TableHead>
-                <TableHead className="text-xs text-right">% Desconto</TableHead>
-                <TableHead className="text-xs text-right">Valor</TableHead>
+                <TableHead className="text-xs whitespace-nowrap">CNPJ</TableHead>
+                <TableHead className="text-xs whitespace-nowrap">Nome</TableHead>
+                <TableHead className="text-xs whitespace-nowrap">Cidade</TableHead>
+                <TableHead className="text-xs text-right whitespace-nowrap">Total de Vidas</TableHead>
+                <TableHead className="text-xs text-right whitespace-nowrap">Total Individual</TableHead>
+                <TableHead className="text-xs text-right whitespace-nowrap">Total Familiar</TableHead>
+                <TableHead className="text-xs whitespace-nowrap">Plano</TableHead>
+                <TableHead className="text-xs text-right whitespace-nowrap">% Desconto</TableHead>
+                <TableHead className="text-xs text-right whitespace-nowrap">Valor</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredCompanies.length > 0 ? (
                 filteredCompanies.map((company) => (
                   <TableRow key={company.id}>
-                    <TableCell className="text-xs font-mono">{company.cnpj}</TableCell>
-                    <TableCell className="text-xs font-medium">{company.nome}</TableCell>
-                    <TableCell className="text-xs">{company.cidade}</TableCell>
-                    <TableCell className="text-xs text-right">{company.totalVidas}</TableCell>
-                    <TableCell className="text-xs text-right">{company.totalIndividual}</TableCell>
-                    <TableCell className="text-xs text-right">{company.totalFamiliar}</TableCell>
-                    <TableCell className="text-xs">{company.plano}</TableCell>
-                    <TableCell className="text-xs text-right">{company.desconto}%</TableCell>
-                    <TableCell className="text-xs text-right">
+                    <TableCell className="text-xs font-mono whitespace-nowrap">{company.cnpj}</TableCell>
+                    <TableCell className="text-xs font-medium whitespace-nowrap">{company.nome}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{company.cidade}</TableCell>
+                    <TableCell className="text-xs text-right whitespace-nowrap">{company.totalVidas}</TableCell>
+                    <TableCell className="text-xs text-right whitespace-nowrap">{company.totalIndividual}</TableCell>
+                    <TableCell className="text-xs text-right whitespace-nowrap">{company.totalFamiliar}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{company.plano}</TableCell>
+                    <TableCell className="text-xs text-right whitespace-nowrap">{company.desconto}%</TableCell>
+                    <TableCell className="text-xs text-right whitespace-nowrap">
                       {company.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </TableCell>
                   </TableRow>
