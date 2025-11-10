@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,32 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pencil, Plus, Check, X, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Product {
-  id: string;
-  name: string;
-  price: string;
-}
-
-const initialProducts: Product[] = [
-  { id: "1", name: "Plano Básico", price: "39,90" },
-  { id: "2", name: "Plano Básico Familiar", price: "69,90" },
-  { id: "3", name: "Plano Intermediário", price: "49,90" },
-  { id: "4", name: "Plano Intermediário Familiar", price: "79,90" },
-  { id: "5", name: "Plano Avançado", price: "59,90" },
-  { id: "6", name: "Plano Avançado Familiar", price: "89,90" },
-  { id: "7", name: "ePharma (50)", price: "0,00" },
-  { id: "8", name: "ePharma (100)", price: "9,90" },
-  { id: "9", name: "ePharma (150)", price: "14,90" },
-  { id: "10", name: "TotalPass1", price: "19,90" },
-  { id: "11", name: "TotalPass2", price: "14,90" },
-  { id: "12", name: "TotalPass3", price: "12,90" },
-  { id: "13", name: "Ubook", price: "1,00" },
-  { id: "14", name: "Braslivros", price: "1,00" },
-];
+import { usePlanStore, Product } from "@/lib/planStore";
 
 export default function AdminPlanos() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const products = usePlanStore((state) => state.products);
+  const setProducts = usePlanStore((state) => state.setProducts);
+  const updateProduct = usePlanStore((state) => state.updateProduct);
+  
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [showNewProduct, setShowNewProduct] = useState(false);
@@ -40,13 +21,12 @@ export default function AdminPlanos() {
 
   const startEdit = (product: Product) => {
     setEditingId(product.id);
-    setEditValue(product.price);
+    setEditValue(product.price.toString());
   };
 
   const saveEdit = (id: string) => {
-    setProducts(products.map(p => 
-      p.id === id ? { ...p, price: editValue } : p
-    ));
+    const priceValue = parseFloat(editValue.replace(',', '.'));
+    updateProduct(id, priceValue);
     setEditingId(null);
     toast({
       title: "Preço atualizado",
@@ -62,7 +42,9 @@ export default function AdminPlanos() {
   const addProduct = () => {
     if (newProduct.name && newProduct.price) {
       const newId = (Math.max(...products.map(p => parseInt(p.id))) + 1).toString();
-      setProducts([...products, { id: newId, ...newProduct }]);
+      const priceValue = parseFloat(newProduct.price.replace(',', '.'));
+      const productsArray = [...products, { id: newId, name: newProduct.name, price: priceValue }];
+      setProducts(productsArray);
       setNewProduct({ name: "", price: "" });
       setShowNewProduct(false);
       toast({
@@ -199,7 +181,7 @@ export default function AdminPlanos() {
                         </div>
                       ) : (
                         <div className="text-base font-semibold text-primary">
-                          R$ {product.price}
+                          R$ {product.price.toFixed(2).replace('.', ',')}
                         </div>
                       )}
 

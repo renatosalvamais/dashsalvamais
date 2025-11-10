@@ -3,6 +3,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useCompanyStore } from "@/lib/companyStore";
+import { usePlanStore } from "@/lib/planStore";
+import { useNavigate } from "react-router-dom";
 import {
   Form,
   FormControl,
@@ -27,10 +31,14 @@ const formSchema = z.object({
   cnpj: z.string().min(1, "CNPJ é obrigatório"),
   nomeEmpresa: z.string().min(1, "Nome da empresa é obrigatório"),
   endereco: z.string().min(1, "Endereço é obrigatório"),
+  cidade: z.string().min(1, "Cidade é obrigatória"),
   contato: z.string().min(1, "Contato é obrigatório"),
   email: z.string().email("Email inválido"),
   telefone: z.string().min(1, "Telefone é obrigatório"),
+  totalIndividual: z.string().min(1, "Total individual é obrigatório"),
+  totalFamiliar: z.string().min(1, "Total familiar é obrigatório"),
   tipoPlano: z.enum(["BASICO", "INTERMEDIARIO", "AVANCADO", "SVA", "CUSTOMIZADO"]),
+  desconto: z.string().min(1, "Desconto é obrigatório"),
   clubeDescontos: z.enum(["sim", "nao"]),
   clubeDescontosDependente: z.enum(["sim", "nao"]),
   telemedicina: z.enum(["sim", "nao"]),
@@ -43,16 +51,25 @@ const formSchema = z.object({
 });
 
 export default function CadastrarEmpresa() {
+  const navigate = useNavigate();
+  const addCompany = useCompanyStore((state) => state.addCompany);
+  const getProductPrice = usePlanStore((state) => state.getProductPrice);
+  const [valorTotal, setValorTotal] = useState(0);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       cnpj: "",
       nomeEmpresa: "",
       endereco: "",
+      cidade: "",
       contato: "",
       email: "",
       telefone: "",
+      totalIndividual: "5",
+      totalFamiliar: "5",
       tipoPlano: "BASICO",
+      desconto: "0",
       clubeDescontos: "nao",
       clubeDescontosDependente: "nao",
       telemedicina: "nao",
@@ -65,10 +82,110 @@ export default function CadastrarEmpresa() {
     },
   });
 
+  const calculateTotal = () => {
+    const values = form.getValues();
+    const individual = parseInt(values.totalIndividual) || 0;
+    const familiar = parseInt(values.totalFamiliar) || 0;
+    const desconto = parseFloat(values.desconto) || 0;
+
+    let total = 0;
+
+    // Plano base
+    const planoMap = {
+      BASICO: { individual: "Plano Básico", familiar: "Plano Básico Familiar" },
+      INTERMEDIARIO: { individual: "Plano Intermediário", familiar: "Plano Intermediário Familiar" },
+      AVANCADO: { individual: "Plano Avançado", familiar: "Plano Avançado Familiar" },
+      SVA: { individual: "Plano Básico", familiar: "Plano Básico Familiar" },
+      CUSTOMIZADO: { individual: "Plano Básico", familiar: "Plano Básico Familiar" },
+    };
+
+    const planoTipo = planoMap[values.tipoPlano as keyof typeof planoMap];
+    total += individual * getProductPrice(planoTipo.individual);
+    total += familiar * getProductPrice(planoTipo.familiar);
+
+    // Epharma titular
+    if (values.epharma !== "nao") {
+      const epharmaPrice = getProductPrice(`ePharma (${values.epharma})`);
+      total += individual * epharmaPrice;
+    }
+
+    // Epharma dependente
+    if (values.epharmaDependente !== "nao") {
+      const epharmaDependPrice = getProductPrice(`ePharma (${values.epharmaDependente})`);
+      total += familiar * epharmaDependPrice;
+    }
+
+    // TotalPass
+    if (values.totalpass !== "nao") {
+      const totalpassMap = {
+        totalpass1: "TotalPass1",
+        totalpass2: "TotalPass2",
+        totalpass3: "TotalPass3",
+      };
+      const totalpassPrice = getProductPrice(totalpassMap[values.totalpass as keyof typeof totalpassMap]);
+      total += (individual + familiar) * totalpassPrice;
+    }
+
+    // Aplicar desconto
+    const totalComDesconto = total * (1 - desconto / 100);
+    setValorTotal(totalComDesconto);
+    return totalComDesconto;
+  };
+
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      calculateTotal();
+    });
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+    const individual = parseInt(values.totalIndividual) || 0;
+    const familiar = parseInt(values.totalFamiliar) || 0;
+    const totalVidas = individual + familiar;
+    const desconto = parseFloat(values.desconto) || 0;
+    const valor = calculateTotal();
+
+    const planoNome = {
+      BASICO: "Básico",
+      INTERMEDIARIO: "Intermediário",
+      AVANCADO: "Avançado",
+      SVA: "SVA",
+      CUSTOMIZADO: "Customizado",
+    }[values.tipoPlano];
+
+    const newCompany = {
+      id: Date.now().toString(),
+      cnpj: values.cnpj,
+      nome: values.nomeEmpresa,
+      endereco: values.endereco,
+      cidade: values.cidade,
+      contato: values.contato,
+      email: values.email,
+      telefone: values.telefone,
+      totalVidas,
+      totalIndividual: individual,
+      totalFamiliar: familiar,
+      plano: planoNome,
+      desconto,
+      valor,
+      beneficios: {
+        clubeDescontos: values.clubeDescontos === "sim",
+        clubeDescontosDependente: values.clubeDescontosDependente === "sim",
+        telemedicina: values.telemedicina === "sim",
+        telemedicinaFamiliar: values.telemedicinaFamiliar === "sim",
+        unimais: values.unimais === "sim",
+        ubook: values.ubook === "sim",
+        totalpass: values.totalpass,
+        epharma: values.epharma,
+        epharmaDependente: values.epharmaDependente,
+      },
+    };
+
+    addCompany(newCompany);
     toast.success("Empresa cadastrada com sucesso!");
     form.reset();
+    navigate("/admin/empresas");
   }
 
   return (
@@ -171,6 +288,69 @@ export default function CadastrarEmpresa() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="cidade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Cidade" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="totalIndividual"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Total Individual</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="totalFamiliar"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Total Familiar</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="desconto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>% Desconto</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormItem>
+                  <FormLabel>Valor Total Calculado</FormLabel>
+                  <div className="text-2xl font-bold text-primary">
+                    {valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </div>
+                </FormItem>
               </CardContent>
             </Card>
 

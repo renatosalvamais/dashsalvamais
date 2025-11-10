@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useCompanyStore } from "@/lib/companyStore";
 import {
   Table,
   TableBody,
@@ -65,7 +66,7 @@ const mockCompanies: Company[] = [
 ];
 
 export default function AdminEmpresas() {
-  const [companies] = useState<Company[]>(mockCompanies);
+  const companies = useCompanyStore((state) => state.companies);
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredCompanies = companies.filter((company) =>
