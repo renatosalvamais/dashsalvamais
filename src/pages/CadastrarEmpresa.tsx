@@ -34,10 +34,10 @@ const formSchema = z.object({
   clubeDescontos: z.enum(["sim", "nao"]),
   clubeDescontosDependente: z.enum(["sim", "nao"]),
   telemedicina: z.enum(["sim", "nao"]),
-  telepsicologia: z.enum(["sim", "nao"]),
+  telemedicinaFamiliar: z.enum(["sim", "nao"]),
   unimais: z.enum(["sim", "nao"]),
   ubook: z.enum(["sim", "nao"]),
-  totalpass: z.enum(["sim", "nao"]),
+  totalpass: z.enum(["totalpass1", "totalpass2", "totalpass3", "nao"]),
   epharma: z.enum(["50", "100", "150", "nao"]),
   epharmaDependente: z.enum(["50", "100", "150", "nao"]),
 });
@@ -56,7 +56,7 @@ export default function CadastrarEmpresa() {
       clubeDescontos: "nao",
       clubeDescontosDependente: "nao",
       telemedicina: "nao",
-      telepsicologia: "nao",
+      telemedicinaFamiliar: "nao",
       unimais: "nao",
       ubook: "nao",
       totalpass: "nao",
@@ -305,10 +305,10 @@ export default function CadastrarEmpresa() {
 
                 <FormField
                   control={form.control}
-                  name="telepsicologia"
+                  name="telemedicinaFamiliar"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel>Telepsicologia</FormLabel>
+                      <FormLabel>Telemedicina Familiar</FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
@@ -400,27 +400,20 @@ export default function CadastrarEmpresa() {
                   control={form.control}
                   name="totalpass"
                   render={({ field }) => (
-                    <FormItem className="space-y-3">
+                    <FormItem>
                       <FormLabel>TotalPass</FormLabel>
                       <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex gap-4"
-                        >
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="sim" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Sim</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="nao" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Não</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="totalpass1">TotalPass1</SelectItem>
+                            <SelectItem value="totalpass2">TotalPass2</SelectItem>
+                            <SelectItem value="totalpass3">TotalPass3</SelectItem>
+                            <SelectItem value="nao">Não</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
