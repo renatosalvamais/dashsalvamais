@@ -4,45 +4,20 @@ import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Trash2 } from "lucide-react";
+import { FileDown } from "lucide-react";
 import { toast } from "sonner";
 
-const colaboradoresData = [
-  {
-    nome: "JOAO DE SOUZA DA SILVA",
-    cpf: "607.773.270-23",
-    telefone: "(91) 98843-9588",
-    dependentes: 2,
-    status: "Ativo",
-    dataCadastro: "08/08/2025",
-    dataExclusao: "-",
-  },
-  {
-    nome: "Joao Paulo Souza Dev",
-    cpf: "534.753.070-73",
-    telefone: "(91) 98843-9574",
-    dependentes: 0,
-    status: "Removido",
-    dataCadastro: "04/08/2025",
-    dataExclusao: "09/11/2025",
-  },
-  {
-    nome: "LUIZ DOURADO DIAS JUNIOR",
-    cpf: "791.185.680-09",
-    telefone: "(91) 98843-9574",
-    dependentes: 3,
-    status: "Ativo",
-    dataCadastro: "31/07/2025",
-    dataExclusao: "-",
-  },
-];
-
 const AdminListaCompleta = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [empresaSearch, setEmpresaSearch] = useState("");
+  const [selectedMes, setSelectedMes] = useState("");
+  const [selectedQuinzena, setSelectedQuinzena] = useState("");
 
-  const handleDelete = (nome: string) => {
-    toast.success(`${nome} foi excluído com sucesso.`);
+  const handleExportRelatorio = () => {
+    if (!empresaSearch) {
+      toast.error("Digite o nome ou CNPJ da empresa primeiro!");
+      return;
+    }
+    toast.success("Relatório exportado com sucesso!");
   };
 
   return (
@@ -58,116 +33,73 @@ const AdminListaCompleta = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard value={28} label="Total" color="total" />
           <StatCard value={24} label="Ativos" color="active" />
-          <StatCard value={18} label="Individual" color="total" />
-          <StatCard value={10} label="Familiar" color="family" />
-          <StatCard value={4} label="Removidos" color="removed" />
+          <StatCard value={18} label="TotalPass" color="total" />
+          <StatCard value={10} label="Epharma" color="family" />
         </div>
 
-        {/* Update Button */}
-        <Button variant="destructive" className="gap-2">
-          <Trash2 className="h-4 w-4" />
-          Atualizar lista (4 removidos)
-        </Button>
-
-        {/* Table */}
+        {/* Filtros */}
         <div className="bg-card rounded-xl p-6 border border-border">
           <h2 className="text-lg font-bold text-card-foreground mb-4">
-            Colaboradores e Dependentes
+            Filtros de Busca
           </h2>
 
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, CPF ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filtrar por status" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <Input
+              placeholder="Nome ou CNPJ da empresa..."
+              value={empresaSearch}
+              onChange={(e) => setEmpresaSearch(e.target.value)}
+            />
+
+            <Input
+              type="date"
+              placeholder="Período de busca"
+            />
+
+            <Select value={selectedMes} onValueChange={setSelectedMes}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar mês" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="ativo">Ativo</SelectItem>
-                <SelectItem value="removido">Removido</SelectItem>
+                <SelectItem value="01">Janeiro</SelectItem>
+                <SelectItem value="02">Fevereiro</SelectItem>
+                <SelectItem value="03">Março</SelectItem>
+                <SelectItem value="04">Abril</SelectItem>
+                <SelectItem value="05">Maio</SelectItem>
+                <SelectItem value="06">Junho</SelectItem>
+                <SelectItem value="07">Julho</SelectItem>
+                <SelectItem value="08">Agosto</SelectItem>
+                <SelectItem value="09">Setembro</SelectItem>
+                <SelectItem value="10">Outubro</SelectItem>
+                <SelectItem value="11">Novembro</SelectItem>
+                <SelectItem value="12">Dezembro</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline">
-              Colunas
-            </Button>
+
+            <Select value={selectedQuinzena} onValueChange={setSelectedQuinzena}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="primeira">Primeira Quinzena (1 a 15)</SelectItem>
+                <SelectItem value="segunda">Segunda Quinzena (16 ao último dia)</SelectItem>
+                <SelectItem value="completo">Mês Completo</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-2 text-xs font-semibold">Nome</th>
-                  <th className="text-left p-2 text-xs font-semibold">CPF</th>
-                  <th className="text-left p-2 text-xs font-semibold">Telefone</th>
-                  <th className="text-left p-2 text-xs font-semibold">Qtd. Dependentes</th>
-                  <th className="text-left p-2 text-xs font-semibold">Status</th>
-                  <th className="text-left p-2 text-xs font-semibold">Ativo</th>
-                  <th className="text-left p-2 text-xs font-semibold">Data Cadastro</th>
-                  <th className="text-left p-2 text-xs font-semibold">Data Exclusão</th>
-                  <th className="text-left p-2 text-xs font-semibold">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {colaboradoresData.map((colab, index) => (
-                  <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
-                    <td className="p-2">
-                      <div className="font-medium text-xs">{colab.nome}</div>
-                    </td>
-                    <td className="p-2 text-xs">{colab.cpf}</td>
-                    <td className="p-2 text-xs">{colab.telefone}</td>
-                    <td className="p-2 text-xs text-center">{colab.dependentes}</td>
-                    <td className="p-2">
-                      <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                          colab.status === "Ativo"
-                            ? "bg-warning text-warning-foreground"
-                            : "bg-destructive text-destructive-foreground"
-                        }`}
-                      >
-                        {colab.status}
-                      </span>
-                    </td>
-                    <td className="p-2">
-                      <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                          colab.status === "Ativo"
-                            ? "bg-success text-success-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {colab.status === "Ativo" ? "Sim" : "Não"}
-                      </span>
-                    </td>
-                    <td className="p-2 text-xs">{colab.dataCadastro}</td>
-                    <td className="p-2 text-xs">{colab.dataExclusao}</td>
-                    <td className="p-2">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => handleDelete(colab.nome)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Excluir
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex justify-center">
+            <Button
+              onClick={handleExportRelatorio}
+              variant="default"
+              size="lg"
+              className="gap-2"
+            >
+              <FileDown className="h-5 w-5" />
+              Exportar Relatório
+            </Button>
           </div>
         </div>
       </div>
