@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
+import { Plus, Search, FileDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface Colaborador {
@@ -12,9 +12,28 @@ interface Colaborador {
   email: string;
 }
 
+interface Empresa {
+  cnpj: string;
+  nome: string;
+}
+
+const empresasData: Empresa[] = [
+  { cnpj: "34.225.216/0001-77", nome: "Salva+ Benefícios" },
+  { cnpj: "12.345.678/0001-90", nome: "Tech Solutions LTDA" },
+  { cnpj: "98.765.432/0001-10", nome: "Inovação Empresarial S.A." },
+];
+
 const AdminCadastroManual = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
+  const [showResults, setShowResults] = useState(false);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>(
     Array(5).fill(null).map(() => ({ nome: "", cpf: "", telefone: "", email: "" }))
+  );
+
+  const filteredEmpresas = empresasData.filter((empresa) =>
+    empresa.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    empresa.cnpj.includes(searchTerm)
   );
 
   const adicionarLinhas = () => {
@@ -33,9 +52,12 @@ const AdminCadastroManual = () => {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success("Colaboradores cadastrados com sucesso!");
+  const handleExport = () => {
+    if (!selectedEmpresa) {
+      toast.error("Selecione uma empresa primeiro!");
+      return;
+    }
+    toast.success("Planilha XLS exportada com sucesso!");
   };
 
   return (
@@ -50,12 +72,64 @@ const AdminCadastroManual = () => {
           </p>
         </div>
 
+        <div className="bg-card rounded-xl p-6 border border-border max-w-3xl">
+          <div className="flex items-center gap-3 mb-4">
+            <Search className="h-5 w-5 text-foreground" />
+            <h2 className="text-lg font-bold text-card-foreground">
+              Buscar Empresa
+            </h2>
+          </div>
+
+          <p className="text-xs text-muted-foreground mb-4">
+            Busque por nome da empresa ou CNPJ
+          </p>
+
+          <div className="relative">
+            <Input
+              placeholder="Digite o nome ou CNPJ da empresa..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowResults(true);
+              }}
+              onFocus={() => setShowResults(true)}
+              className="mb-2"
+            />
+            
+            {showResults && searchTerm && filteredEmpresas.length > 0 && (
+              <div className="absolute z-10 w-full bg-card border border-border rounded-lg shadow-lg mt-1">
+                {filteredEmpresas.map((empresa, index) => (
+                  <div
+                    key={index}
+                    className="p-3 hover:bg-muted/50 cursor-pointer border-b border-border last:border-b-0"
+                    onClick={() => {
+                      setSelectedEmpresa(empresa);
+                      setSearchTerm(empresa.nome);
+                      setShowResults(false);
+                    }}
+                  >
+                    <div className="font-medium text-sm text-foreground">{empresa.nome}</div>
+                    <div className="text-xs text-muted-foreground">CNPJ: {empresa.cnpj}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {selectedEmpresa && (
+            <div className="mt-3 p-3 bg-success/10 border border-success/20 rounded-lg">
+              <div className="text-sm font-medium text-foreground">{selectedEmpresa.nome}</div>
+              <div className="text-xs text-muted-foreground">CNPJ: {selectedEmpresa.cnpj}</div>
+            </div>
+          )}
+        </div>
+
         <div className="bg-card rounded-xl p-6 border border-border">
           <h2 className="text-lg font-bold text-card-foreground mb-4">
             Lista de Colaboradores
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
                 Total de linhas disponíveis: <span className="font-semibold">{colaboradores.length}</span>
@@ -163,15 +237,17 @@ const AdminCadastroManual = () => {
 
             <div className="flex justify-center">
               <Button
-                type="submit"
+                type="button"
+                onClick={handleExport}
                 variant="search"
                 size="lg"
-                className="px-12"
+                className="px-12 gap-2"
               >
-                ENVIAR
+                <FileDown className="h-5 w-5" />
+                EXPORTAR XLS
               </Button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </AdminLayout>
