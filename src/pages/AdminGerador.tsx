@@ -6,7 +6,7 @@ const AdminGerador = () => {
       <div className="h-full flex flex-col">
         <div className="flex-1 bg-card rounded-lg border border-border overflow-hidden">
           <iframe
-            src="https://preview--geradorsalvamais.lovable.app/gerador-salva"
+            src="https://geradorsalvamais-13480.lovable.app/"
             className="w-full h-full"
             title="Gerador Salva+"
           />
