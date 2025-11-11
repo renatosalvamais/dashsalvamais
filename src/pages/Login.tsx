@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { User, Building2 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,20 +19,41 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simular login
-    setTimeout(() => {
-      if (usuario && password) {
-        toast.success("Login realizado com sucesso!");
-        if (userType === "admin") {
-          navigate("/admin/dashboard");
+    try {
+      const email = userType === "admin" ? usuario : `${usuario}@empresa.com`;
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: userType === "admin" ? usuario : email,
+        password: password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Verificar role do usuário
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .single();
+
+        if (roleData) {
+          toast.success("Login realizado com sucesso!");
+          if (roleData.role === "admin") {
+            navigate("/admin/dashboard");
+          } else {
+            navigate("/dashboard");
+          }
         } else {
-          navigate("/dashboard");
+          toast.error("Usuário sem permissões");
+          await supabase.auth.signOut();
         }
-      } else {
-        toast.error("Preencha todos os campos");
       }
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao fazer login");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
