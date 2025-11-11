@@ -1,41 +1,42 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserRole } from "@/hooks/useUserRole";
 import logo from "@/assets/logo.png";
 
-const Login = () => {
+const Signup = () => {
   const navigate = useNavigate();
-  const { signIn, user } = useAuth();
-  const { data: userRole } = useUserRole();
+  const { signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (user && userRole) {
-      if (userRole.role === "admin") {
-        navigate("/admin/dashboard");
-      } else if (userRole.role === "rh") {
-        navigate("/dashboard");
-      }
-    }
-  }, [user, userRole, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast.error("As senhas não coincidem");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres");
+      return;
+    }
+
     setIsLoading(true);
 
-    const { error } = await signIn(email, password);
+    const { error } = await signUp(email, password);
 
     if (error) {
-      toast.error(error.message || "Erro ao fazer login");
+      toast.error(error.message || "Erro ao criar conta");
     } else {
-      toast.success("Login realizado com sucesso!");
+      toast.success("Conta criada! Verifique seu email para confirmar.");
+      navigate("/login");
     }
 
     setIsLoading(false);
@@ -46,10 +47,11 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img src={logo} alt="Salva+ Benefícios" className="h-20 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground mb-2">Sistema de Gestão de RH</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Criar Conta</h1>
+          <p className="text-muted-foreground">Sistema de Gestão de RH</p>
         </div>
 
-        <div className="bg-card rounded-2xl shadow-2xl border border-border overflow-hidden p-8">
+        <div className="bg-card rounded-2xl shadow-2xl border border-border p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-base font-medium">Email</Label>
@@ -77,30 +79,41 @@ const Login = () => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-base font-medium">Confirmar Senha</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="h-12"
+              />
+            </div>
+
             <Button
               type="submit"
               className="w-full h-12 text-base"
               disabled={isLoading}
             >
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? "Criando conta..." : "Criar Conta"}
             </Button>
-          </form>
 
-          <div className="mt-6 text-center space-y-2">
-            <a href="#" className="text-sm text-primary hover:underline block">
-              Esqueceu sua senha?
-            </a>
-            <button
-              onClick={() => navigate("/signup")}
-              className="text-sm text-muted-foreground hover:text-primary"
-            >
-              Não tem uma conta? <span className="text-primary font-medium">Criar conta</span>
-            </button>
-          </div>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="text-sm text-primary hover:underline"
+              >
+                Já tem uma conta? Faça login
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default Signup;

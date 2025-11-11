@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
-import { Home, FileText, ScrollText, Building2, DollarSign, Building, UserPlus, Upload, UserMinus, Users } from "lucide-react";
+import { Home, FileText, ScrollText, Building2, DollarSign, Building, UserPlus, Upload, UserMinus, Users, UserCog } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import logo from "@/assets/logo.png";
 
@@ -12,6 +12,7 @@ const menuItems = [
   { title: "Cadastrar Empresa", url: "/admin/cadastrar-empresa", icon: Building2 },
   { title: "Planos", url: "/admin/planos", icon: DollarSign },
   { title: "Empresas", url: "/admin/empresas", icon: Building },
+  { title: "Gestão de Usuários", url: "/admin/usuarios", icon: UserCog },
   { title: "Cadastro Manual", url: "/admin/cadastro-manual", icon: UserPlus },
   { title: "Importar Planilha", url: "/admin/importar-planilha", icon: Upload },
   { title: "Remover Colaborador", url: "/admin/remover-colaborador", icon: UserMinus },
@@ -23,10 +24,10 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const handleLogout = () => {
-    navigate("/login");
+    signOut();
   };
 
   return (
