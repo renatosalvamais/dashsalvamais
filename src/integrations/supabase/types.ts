@@ -14,16 +14,241 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      beneficiaries: {
+        Row: {
+          ativo: boolean | null
+          company_id: string | null
+          cpf: string
+          created_at: string | null
+          deleted_at: string | null
+          dependentes: number | null
+          id: string
+          nome: string
+          status: string | null
+          telefone: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          company_id?: string | null
+          cpf: string
+          created_at?: string | null
+          deleted_at?: string | null
+          dependentes?: number | null
+          id?: string
+          nome: string
+          status?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          company_id?: string | null
+          cpf?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          dependentes?: number | null
+          id?: string
+          nome?: string
+          status?: string | null
+          telefone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beneficiaries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          beneficios: Json | null
+          cidade: string | null
+          cnpj: string
+          contato: string | null
+          created_at: string | null
+          desconto: number | null
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          plano: string | null
+          telefone: string | null
+          total_familiar: number | null
+          total_individual: number | null
+          total_vidas: number | null
+          updated_at: string | null
+          valor: number | null
+        }
+        Insert: {
+          beneficios?: Json | null
+          cidade?: string | null
+          cnpj: string
+          contato?: string | null
+          created_at?: string | null
+          desconto?: number | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          plano?: string | null
+          telefone?: string | null
+          total_familiar?: number | null
+          total_individual?: number | null
+          total_vidas?: number | null
+          updated_at?: string | null
+          valor?: number | null
+        }
+        Update: {
+          beneficios?: Json | null
+          cidade?: string | null
+          cnpj?: string
+          contato?: string | null
+          created_at?: string | null
+          desconto?: number | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          plano?: string | null
+          telefone?: string | null
+          total_familiar?: number | null
+          total_individual?: number | null
+          total_vidas?: number | null
+          updated_at?: string | null
+          valor?: number | null
+        }
+        Relationships: []
+      }
+      import_logs: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          error_count: number | null
+          errors: Json | null
+          filename: string | null
+          id: string
+          success_count: number | null
+          total_rows: number | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          error_count?: number | null
+          errors?: Json | null
+          filename?: string | null
+          id?: string
+          success_count?: number | null
+          total_rows?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          error_count?: number | null
+          errors?: Json | null
+          filename?: string | null
+          id?: string
+          success_count?: number | null
+          total_rows?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          name: string
+          price: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          cnpj: string | null
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "rh"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +375,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "rh"],
+    },
   },
 } as const
