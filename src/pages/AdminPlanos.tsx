@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pencil, Plus, Check, X, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { usePlanStore, Product } from "@/lib/planStore";
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useReorderProducts, Product } from "@/hooks/useProducts";
 
 export default function AdminPlanos() {
-  const products = usePlanStore((state) => state.products);
-  const setProducts = usePlanStore((state) => state.setProducts);
-  const updateProduct = usePlanStore((state) => state.updateProduct);
+  const { data: products = [], isLoading } = useProducts();
+  const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
+  const reorderProducts = useReorderProducts();
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -26,12 +28,8 @@ export default function AdminPlanos() {
 
   const saveEdit = (id: string) => {
     const priceValue = parseFloat(editValue.replace(',', '.'));
-    updateProduct(id, priceValue);
+    updateProduct.mutate({ id, price: priceValue });
     setEditingId(null);
-    toast({
-      title: "Preço atualizado",
-      description: "O preço foi atualizado com sucesso.",
-    });
   };
 
   const cancelEdit = () => {
@@ -41,40 +39,45 @@ export default function AdminPlanos() {
 
   const addProduct = () => {
     if (newProduct.name && newProduct.price) {
-      const newId = (Math.max(...products.map(p => parseInt(p.id))) + 1).toString();
       const priceValue = parseFloat(newProduct.price.replace(',', '.'));
-      const productsArray = [...products, { id: newId, name: newProduct.name, price: priceValue }];
-      setProducts(productsArray);
+      const maxOrder = products.length > 0 ? Math.max(...products.map(p => p.display_order || 0)) : 0;
+      createProduct.mutate({ 
+        name: newProduct.name, 
+        price: priceValue,
+        display_order: maxOrder + 1
+      });
       setNewProduct({ name: "", price: "" });
       setShowNewProduct(false);
-      toast({
-        title: "Produto adicionado",
-        description: "O novo produto foi adicionado com sucesso.",
-      });
     }
   };
 
   const removeProduct = (id: string) => {
-    setProducts(products.filter(p => p.id !== id));
-    toast({
-      title: "Produto removido",
-      description: "O produto foi removido com sucesso.",
-    });
+    deleteProduct.mutate(id);
   };
 
   const moveUp = (index: number) => {
     if (index === 0) return;
     const newProducts = [...products];
     [newProducts[index - 1], newProducts[index]] = [newProducts[index], newProducts[index - 1]];
-    setProducts(newProducts);
+    reorderProducts.mutate(newProducts);
   };
 
   const moveDown = (index: number) => {
     if (index === products.length - 1) return;
     const newProducts = [...products];
     [newProducts[index + 1], newProducts[index]] = [newProducts[index], newProducts[index + 1]];
-    setProducts(newProducts);
+    reorderProducts.mutate(newProducts);
   };
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Carregando produtos...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

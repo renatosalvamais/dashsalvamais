@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Search, Pencil } from "lucide-react";
-import { useCompanyStore } from "@/lib/companyStore";
 import { formatCNPJ } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useCompanies } from "@/hooks/useCompanies";
 import {
   Table,
   TableBody,
@@ -16,62 +16,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface Company {
-  id: string;
-  cnpj: string;
-  nome: string;
-  cidade: string;
-  totalVidas: number;
-  totalIndividual: number;
-  totalFamiliar: number;
-  plano: string;
-  desconto: number;
-  valor: number;
-}
-
-// Mock data - será substituído por dados reais do banco
-const mockCompanies: Company[] = [
-  {
-    id: "1",
-    cnpj: "12.345.678/0001-90",
-    nome: "Empresa Exemplo Ltda",
-    cidade: "São Paulo",
-    totalVidas: 150,
-    totalIndividual: 100,
-    totalFamiliar: 50,
-    plano: "Plano A",
-    desconto: 10,
-    valor: 5985.00,
-  },
-  {
-    id: "2",
-    cnpj: "98.765.432/0001-10",
-    nome: "Tech Solutions S.A.",
-    cidade: "Rio de Janeiro",
-    totalVidas: 80,
-    totalIndividual: 60,
-    totalFamiliar: 20,
-    plano: "Plano B",
-    desconto: 15,
-    valor: 3192.00,
-  },
-  {
-    id: "3",
-    cnpj: "11.222.333/0001-44",
-    nome: "Comércio Brasil LTDA",
-    cidade: "Belo Horizonte",
-    totalVidas: 200,
-    totalIndividual: 120,
-    totalFamiliar: 80,
-    plano: "Plano C",
-    desconto: 8,
-    valor: 7344.00,
-  },
-];
-
 export default function AdminEmpresas() {
   const navigate = useNavigate();
-  const companies = useCompanyStore((state) => state.companies);
+  const { data: companies = [], isLoading } = useCompanies();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
 
@@ -90,8 +37,18 @@ export default function AdminEmpresas() {
   const filteredCompanies = companies.filter((company) =>
     company.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     company.cnpj.includes(searchTerm) ||
-    company.cidade.toLowerCase().includes(searchTerm.toLowerCase())
+    (company.cidade || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Carregando empresas...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -142,14 +99,14 @@ export default function AdminEmpresas() {
                     </TableCell>
                     <TableCell className="text-xs font-mono whitespace-nowrap">{formatCNPJ(company.cnpj)}</TableCell>
                     <TableCell className="text-xs font-medium whitespace-nowrap">{company.nome}</TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">{company.cidade}</TableCell>
-                    <TableCell className="text-xs text-right whitespace-nowrap">{company.totalVidas}</TableCell>
-                    <TableCell className="text-xs text-right whitespace-nowrap">{company.totalIndividual}</TableCell>
-                    <TableCell className="text-xs text-right whitespace-nowrap">{company.totalFamiliar}</TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">{company.plano}</TableCell>
-                    <TableCell className="text-xs text-right whitespace-nowrap">{company.desconto}%</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{company.cidade || "-"}</TableCell>
+                    <TableCell className="text-xs text-right whitespace-nowrap">{company.total_vidas || 0}</TableCell>
+                    <TableCell className="text-xs text-right whitespace-nowrap">{company.total_individual || 0}</TableCell>
+                    <TableCell className="text-xs text-right whitespace-nowrap">{company.total_familiar || 0}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{company.plano || "-"}</TableCell>
+                    <TableCell className="text-xs text-right whitespace-nowrap">{company.desconto || 0}%</TableCell>
                     <TableCell className="text-xs text-right whitespace-nowrap">
-                      {company.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {(company.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </TableCell>
                     <TableCell className="text-xs text-center whitespace-nowrap">
                       <Button

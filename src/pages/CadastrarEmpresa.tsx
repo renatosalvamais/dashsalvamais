@@ -4,10 +4,10 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { useCompanyStore, Company } from "@/lib/companyStore";
-import { usePlanStore } from "@/lib/planStore";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { normalizeCompanyName, formatCNPJ } from "@/lib/utils";
+import { useProducts } from "@/hooks/useProducts";
+import { useCompany, useCreateCompany, useUpdateCompany } from "@/hooks/useCompanies";
 import {
   Form,
   FormControl,
@@ -26,7 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
 
 const formSchema = z.object({
   cnpj: z.string().min(1, "CNPJ é obrigatório"),
@@ -56,38 +55,20 @@ export default function CadastrarEmpresa() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   
-  const addCompany = useCompanyStore((state) => state.addCompany);
-  const updateCompany = useCompanyStore((state) => state.updateCompany);
-  const companies = useCompanyStore((state) => state.companies);
-  const getProductPrice = usePlanStore((state) => state.getProductPrice);
+  const { data: products = [] } = useProducts();
+  const { data: editingCompany, isLoading: isLoadingCompany } = useCompany(editId);
+  const createCompany = useCreateCompany();
+  const updateCompany = useUpdateCompany();
   const [valorTotal, setValorTotal] = useState(0);
 
-  const editingCompany = editId ? companies.find(c => c.id === editId) : null;
+  const getProductPrice = (name: string) => {
+    const product = products.find((p) => p.name === name);
+    return product ? product.price : 0;
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: editingCompany ? {
-      cnpj: editingCompany.cnpj,
-      nomeEmpresa: editingCompany.nome,
-      endereco: editingCompany.endereco,
-      cidade: editingCompany.cidade,
-      contato: editingCompany.contato,
-      email: editingCompany.email,
-      telefone: editingCompany.telefone,
-      totalIndividual: editingCompany.totalIndividual.toString(),
-      totalFamiliar: editingCompany.totalFamiliar.toString(),
-      tipoPlano: editingCompany.plano.toUpperCase() as any,
-      desconto: editingCompany.desconto.toString(),
-      clubeDescontos: editingCompany.beneficios.clubeDescontos ? "sim" : "nao",
-      clubeDescontosDependente: editingCompany.beneficios.clubeDescontosDependente ? "sim" : "nao",
-      telemedicina: editingCompany.beneficios.telemedicina ? "sim" : "nao",
-      telemedicinaFamiliar: editingCompany.beneficios.telemedicinaFamiliar ? "sim" : "nao",
-      unimais: editingCompany.beneficios.unimais ? "sim" : "nao",
-      ubook: editingCompany.beneficios.ubook ? "sim" : "nao",
-      totalpass: editingCompany.beneficios.totalpass as any,
-      epharma: editingCompany.beneficios.epharma as any,
-      epharmaDependente: editingCompany.beneficios.epharmaDependente as any,
-    } : {
+    defaultValues: {
       cnpj: "",
       nomeEmpresa: "",
       endereco: "",
@@ -110,6 +91,35 @@ export default function CadastrarEmpresa() {
       epharmaDependente: "nao",
     },
   });
+
+  // Atualizar form quando editingCompany carregar
+  useEffect(() => {
+    if (editingCompany) {
+      const beneficios = editingCompany.beneficios as any;
+      form.reset({
+        cnpj: editingCompany.cnpj,
+        nomeEmpresa: editingCompany.nome,
+        endereco: editingCompany.endereco || "",
+        cidade: editingCompany.cidade || "",
+        contato: editingCompany.contato || "",
+        email: editingCompany.email || "",
+        telefone: editingCompany.telefone || "",
+        totalIndividual: (editingCompany.total_individual || 0).toString(),
+        totalFamiliar: (editingCompany.total_familiar || 0).toString(),
+        tipoPlano: editingCompany.plano?.toUpperCase() as any || "BASICO",
+        desconto: (editingCompany.desconto || 0).toString(),
+        clubeDescontos: beneficios?.clubeDescontos ? "sim" : "nao",
+        clubeDescontosDependente: beneficios?.clubeDescontosDependente ? "sim" : "nao",
+        telemedicina: beneficios?.telemedicina ? "sim" : "nao",
+        telemedicinaFamiliar: beneficios?.telemedicinaFamiliar ? "sim" : "nao",
+        unimais: beneficios?.unimais ? "sim" : "nao",
+        ubook: beneficios?.ubook ? "sim" : "nao",
+        totalpass: beneficios?.totalpass || "nao",
+        epharma: beneficios?.epharma || "nao",
+        epharmaDependente: beneficios?.epharmaDependente || "nao",
+      });
+    }
+  }, [editingCompany, form]);
 
   const calculateTotal = () => {
     const values = form.getValues();
@@ -183,7 +193,6 @@ export default function CadastrarEmpresa() {
       CUSTOMIZADO: "Customizado",
     }[values.tipoPlano];
 
-    // Normalizar o nome da empresa: CAPSLOCK, sem acentos e sem caracteres especiais
     const nomeNormalizado = normalizeCompanyName(values.nomeEmpresa);
 
     const companyData = {
@@ -194,9 +203,9 @@ export default function CadastrarEmpresa() {
       contato: values.contato,
       email: values.email,
       telefone: values.telefone,
-      totalVidas,
-      totalIndividual: individual,
-      totalFamiliar: familiar,
+      total_vidas: totalVidas,
+      total_individual: individual,
+      total_familiar: familiar,
       plano: planoNome,
       desconto,
       valor,
@@ -214,18 +223,30 @@ export default function CadastrarEmpresa() {
     };
 
     if (editId) {
-      updateCompany(editId, companyData);
-      toast.success("Empresa atualizada com sucesso!");
-    } else {
-      addCompany({
-        id: Date.now().toString(),
-        ...companyData,
+      updateCompany.mutate({ id: editId, ...companyData }, {
+        onSuccess: () => {
+          form.reset();
+          navigate("/admin/empresas");
+        },
       });
-      toast.success("Empresa cadastrada com sucesso!");
+    } else {
+      createCompany.mutate(companyData, {
+        onSuccess: () => {
+          form.reset();
+          navigate("/admin/empresas");
+        },
+      });
     }
-    
-    form.reset();
-    navigate("/admin/empresas");
+  }
+
+  if (isLoadingCompany && editId) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Carregando empresa...</p>
+        </div>
+      </AdminLayout>
+    );
   }
 
   return (
