@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Plus, Check, X, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Pencil, Plus, Check, X, Trash2, ChevronUp, ChevronDown, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useReorderProducts, Product } from "@/hooks/useProducts";
 
@@ -20,6 +20,36 @@ export default function AdminPlanos() {
   const [showNewProduct, setShowNewProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: "", price: "" });
   const { toast } = useToast();
+
+  const handleExportProducts = () => {
+    try {
+      if (!products || products.length === 0) {
+        toast({ description: "Nenhum produto para exportar.", variant: "destructive" });
+        return;
+      }
+      const header = ["Nome", "Preço", "Ordem"];
+      const escape = (v: any) => {
+        const s = v == null ? "" : String(v);
+        return `"${s.replace(/"/g, '""')}"`;
+      };
+      const lines = products.map((p) => [
+        escape(p.name),
+        escape(p.price.toFixed(2).replace('.', ',')),
+        escape((p.display_order ?? 0).toString()),
+      ].join(";"));
+      const csv = [header.join(";"), ...lines].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "planos_produtos.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ description: "Exportação concluída!" });
+    } catch (err: any) {
+      toast({ description: "Falha ao exportar: " + (err?.message || String(err)), variant: "destructive" });
+    }
+  };
 
   const startEdit = (product: Product) => {
     setEditingId(product.id);
@@ -84,10 +114,16 @@ export default function AdminPlanos() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Planos</h1>
-          <Button onClick={() => setShowNewProduct(true)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Cadastrar Produto
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleExportProducts} size="sm" variant="outline">
+              <FileDown className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+            <Button onClick={() => setShowNewProduct(true)} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Cadastrar Produto
+            </Button>
+          </div>
         </div>
 
         {showNewProduct && (

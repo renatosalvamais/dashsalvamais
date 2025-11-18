@@ -21,6 +21,10 @@ import RemoverColaborador from "./pages/RemoverColaborador";
 import ListaCompleta from "./pages/ListaCompleta";
 import ProgramaSupera from "./pages/ProgramaSupera";
 import NotFound from "./pages/NotFound";
+import AdminSeed from "./pages/AdminSeed";
+import AdminPlanilhaTeste from "./pages/AdminPlanilhaTeste";
+import AdminImportarEmpresas from "./pages/AdminImportarEmpresas";
+import AdminImportarBeneficiarios from "./pages/AdminImportarBeneficiarios";
 
 const queryClient = new QueryClient();
 
@@ -34,14 +38,18 @@ const App = () => (
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin/seed" element={<AdminSeed />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/gerador" element={<AdminGerador />} />
         <Route path="/admin/propostas" element={<AdminPropostas />} />
         <Route path="/admin/cadastrar-empresa" element={<CadastrarEmpresa />} />
         <Route path="/admin/empresas" element={<AdminEmpresas />} />
         <Route path="/admin/planos" element={<AdminPlanos />} />
+        <Route path="/admin/planilha-teste" element={<AdminPlanilhaTeste />} />
         <Route path="/admin/cadastro-manual" element={<AdminCadastroManual />} />
         <Route path="/admin/importar-planilha" element={<AdminImportarPlanilha />} />
+        <Route path="/admin/importar-empresas" element={<AdminImportarEmpresas />} />
+        <Route path="/admin/importar-beneficiarios" element={<AdminImportarBeneficiarios />} />
         <Route path="/admin/remover-colaborador" element={<AdminRemoverColaborador />} />
         <Route path="/admin/lista-completa" element={<AdminListaCompleta />} />
           <Route path="/cadastrar" element={<CadastrarColaborador />} />

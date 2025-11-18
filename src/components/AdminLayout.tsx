@@ -1,9 +1,15 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Home, FileText, ScrollText, Building2, DollarSign, Building, UserPlus, Upload, UserMinus, Users } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import logo from "@/assets/logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { title: "Home", url: "/admin/dashboard", icon: Home },
@@ -24,9 +30,41 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
+  const [isPwdOpen, setPwdOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChanging, setIsChanging] = useState(false);
 
   const handleLogout = () => {
     navigate("/login");
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error("Preencha a nova senha e a confirmação.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não conferem.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("A nova senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+    try {
+      setIsChanging(true);
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Senha alterada com sucesso!");
+      setPwdOpen(false);
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err?.message || "Não foi possível alterar a senha.");
+    } finally {
+      setIsChanging(false);
+    }
   };
 
   return (
@@ -67,7 +105,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <span className="text-sm">Empresa: <span className="font-semibold">Salva+ Benefícios</span> - CNPJ: 34.225.216/0001-77</span>
             </div>
             <div className="flex items-center gap-4">
-              <button className="text-sm text-header-foreground hover:underline">
+              <button className="text-sm text-header-foreground hover:underline" onClick={() => setPwdOpen(true)}>
                 Trocar Senha
               </button>
               <button onClick={handleLogout} className="text-sm text-header-foreground hover:underline flex items-center gap-2">
@@ -76,6 +114,42 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </button>
             </div>
           </header>
+
+          <Dialog open={isPwdOpen} onOpenChange={setPwdOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Alterar Senha</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password-admin">Nova Senha</Label>
+                  <Input
+                    id="new-password-admin"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Digite a nova senha"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password-admin">Confirmar Senha</Label>
+                  <Input
+                    id="confirm-password-admin"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirme a nova senha"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setPwdOpen(false)} disabled={isChanging}>Cancelar</Button>
+                <Button onClick={handleChangePassword} disabled={isChanging}>
+                  {isChanging ? "Salvando..." : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <main className="flex-1 p-8 bg-background">
             {children}
