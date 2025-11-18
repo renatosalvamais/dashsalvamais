@@ -5,20 +5,42 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus } from "lucide-react";
+import { formatCPF, formatPhone } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useCurrentCompany } from "@/hooks/useCurrentCompany";
+import { useCreateBeneficiary } from "@/hooks/useBeneficiaries";
 
 interface Colaborador {
   nome: string;
   cpf: string;
   telefone: string;
   email: string;
+  dependente1?: string;
+  cpf1?: string;
+  dependente2?: string;
+  cpf2?: string;
+  dependente3?: string;
+  cpf3?: string;
 }
 
 const CadastrarColaborador = () => {
   const navigate = useNavigate();
+  const { data: companyCtx } = useCurrentCompany();
+  const createBeneficiary = useCreateBeneficiary();
   const [colaboradores, setColaboradores] = useState<Colaborador[]>(
-    Array(5).fill(null).map(() => ({ nome: "", cpf: "", telefone: "", email: "" }))
+    Array(5).fill(null).map(() => ({ 
+      nome: "", 
+      cpf: "", 
+      telefone: "", 
+      email: "",
+      dependente1: "",
+      cpf1: "",
+      dependente2: "",
+      cpf2: "",
+      dependente3: "",
+      cpf3: ""
+    }))
   );
 
   const adicionarLinhas = () => {
@@ -37,9 +59,37 @@ const CadastrarColaborador = () => {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Colaboradores cadastrados com sucesso!");
+    const companyId = companyCtx?.company?.id;
+    if (!companyId) {
+      toast.error("Empresa não identificada. Faça login novamente.");
+      return;
+    }
+
+    const rows = colaboradores.filter((c) => c.nome.trim() && c.cpf.trim());
+    if (rows.length === 0) {
+      toast.error("Preencha ao menos um colaborador com Nome e CPF.");
+      return;
+    }
+
+    try {
+      for (const c of rows) {
+        await createBeneficiary.mutateAsync({
+          company_id: companyId,
+          nome: c.nome.trim(),
+          cpf: c.cpf.replace(/\D/g, ""),
+          telefone: c.telefone ? c.telefone.replace(/\D/g, "") : null,
+          dependentes: 0,
+          ativo: true,
+          status: "Ativo",
+        });
+      }
+      toast.success("Colaboradores cadastrados com sucesso!");
+      limparLinhas();
+    } catch (err: any) {
+      toast.error("Falha ao cadastrar: " + err.message);
+    }
   };
 
   return (
@@ -93,61 +143,106 @@ const CadastrarColaborador = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {colaboradores.map((_, index) => (
+                  {colaboradores.map((colab, index) => (
                     <tr key={index} className="border-b border-border">
                       <td className="p-3 text-sm">{index + 1}</td>
                       <td className="p-3">
                         <Input
                           placeholder="Nome completo"
                           className="bg-muted/50"
+                          value={colab.nome}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setColaboradores((prev) => prev.map((p, i) => i === index ? { ...p, nome: v } : p));
+                          }}
                         />
                       </td>
                       <td className="p-3">
                         <Input
                           placeholder="000.000.000-00"
                           className="bg-muted/50"
+                          value={colab.cpf}
+                          onChange={(e) => {
+                            const v = formatCPF(e.target.value);
+                            setColaboradores((prev) => prev.map((p, i) => i === index ? { ...p, cpf: v } : p));
+                          }}
                         />
                       </td>
                       <td className="p-3">
                         <Input
                           placeholder="(11) 99999-9999"
                           className="bg-muted/50"
+                          value={colab.telefone}
+                          onChange={(e) => {
+                            const v = formatPhone(e.target.value);
+                            setColaboradores((prev) => prev.map((p, i) => i === index ? { ...p, telefone: v } : p));
+                          }}
                         />
                       </td>
                       <td className="p-3">
                         <Input
                           placeholder="Nome dep. 1"
                           className="bg-muted/50"
+                          value={colab.dependente1 || ""}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setColaboradores((prev) => prev.map((p, i) => i === index ? { ...p, dependente1: v } : p));
+                          }}
                         />
                       </td>
                       <td className="p-3">
                         <Input
                           placeholder="000.000.000-00"
                           className="bg-muted/50"
+                          value={colab.cpf1 || ""}
+                          onChange={(e) => {
+                            const v = formatCPF(e.target.value);
+                            setColaboradores((prev) => prev.map((p, i) => i === index ? { ...p, cpf1: v } : p));
+                          }}
                         />
                       </td>
                       <td className="p-3">
                         <Input
                           placeholder="Nome dep. 2"
                           className="bg-muted/50"
+                          value={colab.dependente2 || ""}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setColaboradores((prev) => prev.map((p, i) => i === index ? { ...p, dependente2: v } : p));
+                          }}
                         />
                       </td>
                       <td className="p-3">
                         <Input
                           placeholder="000.000.000-00"
                           className="bg-muted/50"
+                          value={colab.cpf2 || ""}
+                          onChange={(e) => {
+                            const v = formatCPF(e.target.value);
+                            setColaboradores((prev) => prev.map((p, i) => i === index ? { ...p, cpf2: v } : p));
+                          }}
                         />
                       </td>
                       <td className="p-3">
                         <Input
                           placeholder="Nome dep. 3"
                           className="bg-muted/50"
+                          value={colab.dependente3 || ""}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setColaboradores((prev) => prev.map((p, i) => i === index ? { ...p, dependente3: v } : p));
+                          }}
                         />
                       </td>
                       <td className="p-3">
                         <Input
                           placeholder="000.000.000-00"
                           className="bg-muted/50"
+                          value={colab.cpf3 || ""}
+                          onChange={(e) => {
+                            const v = formatCPF(e.target.value);
+                            setColaboradores((prev) => prev.map((p, i) => i === index ? { ...p, cpf3: v } : p));
+                          }}
                         />
                       </td>
                     </tr>

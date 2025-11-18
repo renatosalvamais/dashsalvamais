@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { normalizeCompanyName, formatCNPJ } from "@/lib/utils";
 import { useProducts } from "@/hooks/useProducts";
+import { usePlanStore } from "@/lib/planStore";
 import { useCompany, useCreateCompany, useUpdateCompany } from "@/hooks/useCompanies";
 import {
   Form,
@@ -35,8 +36,6 @@ const formSchema = z.object({
   contato: z.string().min(1, "Contato é obrigatório"),
   email: z.string().email("Email inválido"),
   telefone: z.string().min(1, "Telefone é obrigatório"),
-  totalIndividual: z.string().min(1, "Total individual é obrigatório"),
-  totalFamiliar: z.string().min(1, "Total familiar é obrigatório"),
   tipoPlano: z.enum(["BASICO", "INTERMEDIARIO", "AVANCADO", "SVA", "CUSTOMIZADO"]),
   desconto: z.string().min(1, "Desconto é obrigatório"),
   clubeDescontos: z.enum(["sim", "nao"]),
@@ -56,14 +55,37 @@ export default function CadastrarEmpresa() {
   const editId = searchParams.get('edit');
   
   const { data: products = [] } = useProducts();
+  const planStore = usePlanStore();
   const { data: editingCompany, isLoading: isLoadingCompany } = useCompany(editId);
   const createCompany = useCreateCompany();
   const updateCompany = useUpdateCompany();
   const [valorTotal, setValorTotal] = useState(0);
 
   const getProductPrice = (name: string) => {
-    const product = products.find((p) => p.name === name);
-    return product ? product.price : 0;
+    // normaliza rótulos para comparação tolerante a acentos/maiúsculas/espacos
+    const normalizeLabel = (s: string) =>
+      s
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "")
+        .replace(/[()\-_.]/g, "");
+
+    // 1) tentativa por igualdade exata (preferir preço do banco se > 0)
+    const exact = products.find((p) => p.name === name);
+    if (exact && exact.price > 0) return exact.price;
+
+    // 2) tentativa por igualdade normalizada
+    const targetNorm = normalizeLabel(name);
+    const byNorm = products.find((p) => normalizeLabel(p.name) === targetNorm);
+    if (byNorm && byNorm.price > 0) return byNorm.price;
+
+    // 3) fallback ao planStore local (preços padrão)
+    const fallback = planStore.getProductPrice(name);
+    if (fallback > 0) return fallback;
+
+    // 4) se encontrou algo no banco mas com preço 0, retorna 0; caso contrário, 0
+    return exact?.price ?? byNorm?.price ?? 0;
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -76,8 +98,6 @@ export default function CadastrarEmpresa() {
       contato: "",
       email: "",
       telefone: "",
-      totalIndividual: "5",
-      totalFamiliar: "5",
       tipoPlano: "BASICO",
       desconto: "0",
       clubeDescontos: "nao",
@@ -96,6 +116,20 @@ export default function CadastrarEmpresa() {
   useEffect(() => {
     if (editingCompany) {
       const beneficios = editingCompany.beneficios as any;
+      // normaliza o valor do plano salvo (remove acentos e coloca em maiúsculas)
+      const normalizePlanoKey = (v: string | null | undefined) => {
+        if (!v) return "BASICO" as const;
+        const up = v.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        // mapeia nomes para chaves aceitas pelo enum
+        const map: Record<string, keyof typeof formSchema.shape.tipoPlano._def.innerType> = {
+          BASICO: "BASICO",
+          INTERMEDIARIO: "INTERMEDIARIO",
+          AVANCADO: "AVANCADO",
+          SVA: "SVA",
+          CUSTOMIZADO: "CUSTOMIZADO",
+        };
+        return (map[up] || "BASICO") as const;
+      };
       form.reset({
         cnpj: editingCompany.cnpj,
         nomeEmpresa: editingCompany.nome,
@@ -104,9 +138,7 @@ export default function CadastrarEmpresa() {
         contato: editingCompany.contato || "",
         email: editingCompany.email || "",
         telefone: editingCompany.telefone || "",
-        totalIndividual: (editingCompany.total_individual || 0).toString(),
-        totalFamiliar: (editingCompany.total_familiar || 0).toString(),
-        tipoPlano: editingCompany.plano?.toUpperCase() as any || "BASICO",
+        tipoPlano: normalizePlanoKey(editingCompany.plano) as any,
         desconto: (editingCompany.desconto || 0).toString(),
         clubeDescontos: beneficios?.clubeDescontos ? "sim" : "nao",
         clubeDescontosDependente: beneficios?.clubeDescontosDependente ? "sim" : "nao",
@@ -123,8 +155,8 @@ export default function CadastrarEmpresa() {
 
   const calculateTotal = () => {
     const values = form.getValues();
-    const individual = parseInt(values.totalIndividual) || 0;
-    const familiar = parseInt(values.totalFamiliar) || 0;
+    const individual = 0;
+    const familiar = 0;
     const desconto = parseFloat(values.desconto) || 0;
 
     let total = 0;
@@ -138,7 +170,9 @@ export default function CadastrarEmpresa() {
       CUSTOMIZADO: { individual: "Plano Básico", familiar: "Plano Básico Familiar" },
     };
 
-    const planoTipo = planoMap[values.tipoPlano as keyof typeof planoMap];
+    const planoTipo =
+      planoMap[(values.tipoPlano as keyof typeof planoMap) || "BASICO"] ||
+      planoMap["BASICO"];
     total += individual * getProductPrice(planoTipo.individual);
     total += familiar * getProductPrice(planoTipo.familiar);
 
@@ -178,10 +212,13 @@ export default function CadastrarEmpresa() {
     return () => subscription.unsubscribe();
   }, [form.watch]);
 
+  // Recalcula quando os produtos do Supabase são carregados/atualizados
+  useEffect(() => {
+    calculateTotal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const individual = parseInt(values.totalIndividual) || 0;
-    const familiar = parseInt(values.totalFamiliar) || 0;
-    const totalVidas = individual + familiar;
     const desconto = parseFloat(values.desconto) || 0;
     const valor = calculateTotal();
 
@@ -203,9 +240,9 @@ export default function CadastrarEmpresa() {
       contato: values.contato,
       email: values.email,
       telefone: values.telefone,
-      total_vidas: totalVidas,
-      total_individual: individual,
-      total_familiar: familiar,
+      total_vidas: null,
+      total_individual: null,
+      total_familiar: null,
       plano: planoNome,
       desconto,
       valor,
@@ -368,34 +405,6 @@ export default function CadastrarEmpresa() {
 
                 <FormField
                   control={form.control}
-                  name="totalIndividual"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Total Individual</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="0" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="totalFamiliar"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Total Familiar</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="0" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="desconto"
                   render={({ field }) => (
                     <FormItem>
@@ -428,7 +437,7 @@ export default function CadastrarEmpresa() {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o tipo de plano" />
                           </SelectTrigger>
@@ -462,7 +471,7 @@ export default function CadastrarEmpresa() {
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex gap-4"
                         >
                           <FormItem className="flex items-center space-x-2 space-y-0">
@@ -493,7 +502,7 @@ export default function CadastrarEmpresa() {
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex gap-4"
                         >
                           <FormItem className="flex items-center space-x-2 space-y-0">
@@ -524,7 +533,7 @@ export default function CadastrarEmpresa() {
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex gap-4"
                         >
                           <FormItem className="flex items-center space-x-2 space-y-0">
@@ -555,7 +564,7 @@ export default function CadastrarEmpresa() {
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex gap-4"
                         >
                           <FormItem className="flex items-center space-x-2 space-y-0">
@@ -586,7 +595,7 @@ export default function CadastrarEmpresa() {
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex gap-4"
                         >
                           <FormItem className="flex items-center space-x-2 space-y-0">
@@ -715,7 +724,7 @@ export default function CadastrarEmpresa() {
 
             <div className="flex justify-end">
               <Button type="submit" size="lg">
-                Cadastrar Empresa
+                {editId ? "Salvar alterações" : "Cadastrar Empresa"}
               </Button>
             </div>
           </form>

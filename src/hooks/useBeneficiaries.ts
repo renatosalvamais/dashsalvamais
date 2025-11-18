@@ -11,6 +11,7 @@ export const useBeneficiaries = (companyId?: string) => {
   return useQuery({
     queryKey: companyId ? ["beneficiaries", companyId] : ["beneficiaries"],
     queryFn: async () => {
+      console.log("useBeneficiaries: iniciando consulta", { companyId });
       let query = supabase
         .from("beneficiaries")
         .select("*")
@@ -21,10 +22,18 @@ export const useBeneficiaries = (companyId?: string) => {
         query = query.eq("company_id", companyId);
       }
       
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data as Beneficiary[];
+      try {
+        const { data, error } = await query;
+        if (error) {
+          console.error("useBeneficiaries: erro na consulta", error);
+          throw error;
+        }
+        console.log("useBeneficiaries: registros retornados", data ? data.length : 0);
+        return data as Beneficiary[];
+      } catch (e) {
+        console.error("useBeneficiaries: exceção", e);
+        throw e;
+      }
     },
   });
 };

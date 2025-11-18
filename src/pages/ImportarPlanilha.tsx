@@ -7,30 +7,9 @@ import { ArrowLeft, Upload, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-interface ImportLog {
-  id: number;
-  empresa: string;
-  data: string;
-  status: "sucesso" | "falha";
-}
-
 const ImportarPlanilha = () => {
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [importLogs, setImportLogs] = useState<ImportLog[]>([
-    {
-      id: 1,
-      empresa: "Salva+ Benefícios",
-      data: "2025-11-08 14:30:00",
-      status: "sucesso",
-    },
-    {
-      id: 2,
-      empresa: "Salva+ Benefícios",
-      data: "2025-11-07 10:15:00",
-      status: "falha",
-    },
-  ]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -45,21 +24,8 @@ const ImportarPlanilha = () => {
       return;
     }
 
-    // Simular envio
-    const novoLog: ImportLog = {
-      id: importLogs.length + 1,
-      empresa: "Salva+ Benefícios",
-      data: new Date().toLocaleString("pt-BR"),
-      status: Math.random() > 0.3 ? "sucesso" : "falha",
-    };
-
-    setImportLogs([novoLog, ...importLogs]);
-    
-    if (novoLog.status === "sucesso") {
-      toast.success("Planilha importada com sucesso!");
-    } else {
-      toast.error("Falha ao importar planilha");
-    }
+    // Simular envio - removido log de importação
+    toast.success("Planilha importada com sucesso!");
     
     setSelectedFile(null);
     // Reset file input
@@ -139,43 +105,6 @@ const ImportarPlanilha = () => {
               </Button>
             </div>
           </form>
-        </div>
-
-        <div className="bg-card rounded-xl p-6 border border-border">
-          <h2 className="text-xl font-bold text-card-foreground mb-6">
-            Log de Importações
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-3 text-sm font-semibold">Empresa</th>
-                  <th className="text-left p-3 text-sm font-semibold">Data de Envio</th>
-                  <th className="text-left p-3 text-sm font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {importLogs.map((log) => (
-                  <tr key={log.id} className="border-b border-border">
-                    <td className="p-3 text-sm">{log.empresa}</td>
-                    <td className="p-3 text-sm">{log.data}</td>
-                    <td className="p-3">
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                          log.status === "sucesso"
-                            ? "bg-success/20 text-success"
-                            : "bg-destructive/20 text-destructive"
-                        }`}
-                      >
-                        {log.status === "sucesso" ? "Sucesso" : "Falha"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
     </Layout>

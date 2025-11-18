@@ -15,38 +15,180 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const digitsOnly = (v: string) => v.replace(/\D/g, "");
+
+  const computeEmail = (userType: "admin" | "empresa") => {
+    if (userType === "admin") return usuario;
+    const cnpjDigits = digitsOnly(usuario);
+    return `${cnpjDigits}@empresa.com`;
+  };
+
+  const handleResendConfirmation = async (userType: "admin" | "empresa") => {
+    const email = computeEmail(userType);
+    if (!email) {
+      toast.error("Informe o usuário/email antes de reenviar a confirmação.");
+      return;
+    }
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    if (error) {
+      toast.error(error.message || "Falha ao reenviar confirmação");
+    } else {
+      toast.success("Email de confirmação reenviado.");
+    }
+  };
+
+  const handleResetPassword = async (userType: "admin" | "empresa") => {
+    const email = computeEmail(userType);
+    if (!email) {
+      toast.error("Informe o usuário/email antes de recuperar a senha.");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/login",
+    });
+    if (error) {
+      toast.error(error.message || "Falha ao enviar link de recuperação");
+    } else {
+      toast.success("Enviamos um link para recuperar sua senha.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent, userType: "admin" | "empresa") => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const email = userType === "admin" ? usuario : `${usuario}@empresa.com`;
-      
+      const email = computeEmail(userType);
+
+      // Para empresa, normaliza CNPJ e usa como senha padrão
+      const isEmpresa = userType === "empresa";
+      const cnpjDigits = isEmpresa ? digitsOnly(usuario) : undefined;
+      if (isEmpresa && (!cnpjDigits || cnpjDigits.length !== 14)) {
+        throw new Error("Informe um CNPJ válido (14 dígitos)");
+      }
+
+      // 1) Tentar login
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: userType === "admin" ? usuario : email,
-        password: password,
+        email,
+        password,
       });
+
+      // 2) Se credenciais inválidas e for empresa, tentar criar o usuário automaticamente
+      if (error && isEmpresa) {
+        const { data: signupData, error: signupError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (signupError) {
+          // Se usuário já existir, orientar reset de senha e garantir role via função de servidor
+          if (String(signupError.message).toLowerCase().includes("already registered")) {
+            try {
+              // Garante criação de role usando Service Role via Edge Function
+              await supabase.functions.invoke("provision-company-user", {
+                body: { cnpj: cnpjDigits },
+              });
+            } catch (fnErr) {
+              // Não interrompe fluxo; apenas registra
+              console.warn("Falha ao garantir role via função:", fnErr);
+            }
+            toast.error("Conta já existe. Se esqueceu a senha, use 'Esqueci minha senha'.");
+          } else {
+            throw signupError;
+          }
+        } else {
+          try {
+            // Garante criação de role usando Service Role via Edge Function
+            await supabase.functions.invoke("provision-company-user", {
+              body: { cnpj: cnpjDigits },
+            });
+          } catch (fnErr) {
+            console.warn("Falha ao provisionar role após signup:", fnErr);
+          }
+        }
+
+        // Tentar login novamente após criar
+        const retry = await supabase.auth.signInWithPassword({ email, password });
+        if (retry.error) throw retry.error;
+        if (!retry.data?.user) throw new Error("Falha ao autenticar o usuário da empresa");
+
+        // Prosseguir com fluxo usando retry
+        const user = retry.data.user;
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .single();
+
+        toast.success("Login realizado com sucesso!");
+        if (isEmpresa) {
+          // Empresa navega independente da role; garantimos role em background
+          navigate("/dashboard");
+        } else if (roleData?.role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+        return;
+      }
 
       if (error) throw error;
 
       if (data.user) {
         // Verificar role do usuário
-        const { data: roleData } = await supabase
+        let { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", data.user.id)
-          .single();
+          .maybeSingle();
 
-        if (roleData) {
-          toast.success("Login realizado com sucesso!");
-          if (roleData.role === "admin") {
-            navigate("/admin/dashboard");
-          } else {
-            navigate("/dashboard");
+        // Se não tiver role e for empresa, atribui 'rh' automaticamente
+        if (!roleData && isEmpresa && cnpjDigits) {
+          // Usa função de servidor para evitar bloqueios de RLS
+          try {
+            await supabase.functions.invoke("provision-company-user", {
+              body: { cnpj: cnpjDigits },
+            });
+          } catch (fnErr) {
+            console.warn("Falha ao garantir role no pós-login:", fnErr);
           }
+          // Fallback: tenta criar role pelo cliente (sem onConflict, faz select/insert/update)
+          try {
+            const { data: existing } = await supabase
+              .from("user_roles")
+              .select("id")
+              .eq("user_id", data.user.id)
+              .maybeSingle();
+
+            if (existing?.id) {
+              await supabase
+                .from("user_roles")
+                .update({ role: "rh", cnpj: cnpjDigits })
+                .eq("id", existing.id);
+            } else {
+              await supabase
+                .from("user_roles")
+                .insert({ user_id: data.user.id, role: "rh", cnpj: cnpjDigits });
+            }
+          } catch (clientErr) {
+            console.warn("Falha ao criar role via cliente:", clientErr);
+          }
+          const res = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.user.id)
+            .maybeSingle();
+          roleData = res.data;
+        }
+
+        // Empresa navega independente da role; garantimos role em background
+        toast.success("Login realizado com sucesso!");
+        if (isEmpresa) {
+          navigate("/dashboard");
+        } else if (roleData?.role === "admin") {
+          navigate("/admin/dashboard");
         } else {
-          toast.error("Usuário sem permissões");
-          await supabase.auth.signOut();
+          navigate("/dashboard");
         }
       }
     } catch (error: any) {
@@ -119,6 +261,18 @@ const Login = () => {
                   >
                     {isLoading ? "Entrando..." : "Entrar"}
                   </Button>
+                  <div className="flex items-center justify-between mt-2">
+                    <Button type="button" variant="link" className="px-0"
+                      onClick={() => handleResendConfirmation("admin")}
+                    >
+                      Reenviar confirmação de email
+                    </Button>
+                    <Button type="button" variant="link" className="px-0"
+                      onClick={() => handleResetPassword("admin")}
+                    >
+                      Esqueci minha senha
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
 
@@ -148,6 +302,9 @@ const Login = () => {
                       required
                       className="h-12"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Senha padrão é o próprio CNPJ (somente números). Você poderá alterá-la depois.
+                    </p>
                   </div>
 
                   <Button
@@ -157,6 +314,18 @@ const Login = () => {
                   >
                     {isLoading ? "Entrando..." : "Entrar"}
                   </Button>
+                  <div className="flex items-center justify-between mt-2">
+                    <Button type="button" variant="link" className="px-0"
+                      onClick={() => handleResendConfirmation("empresa")}
+                    >
+                      Reenviar confirmação de email
+                    </Button>
+                    <Button type="button" variant="link" className="px-0"
+                      onClick={() => handleResetPassword("empresa")}
+                    >
+                      Esqueci minha senha
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
 
