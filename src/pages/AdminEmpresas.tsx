@@ -2,12 +2,12 @@ import { useState } from "react";
 import * as XLSX from "xlsx";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Input } from "@/components/ui/input";
-import { Search, Pencil, FileDown, Upload } from "lucide-react";
+import { Search, Pencil, FileDown, Trash2 } from "lucide-react";
 import { formatCNPJ } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useCompanies } from "@/hooks/useCompanies";
+import { useCompanies, useDeleteCompany } from "@/hooks/useCompanies";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -18,14 +18,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminEmpresas() {
   const navigate = useNavigate();
   const { data: companies = [], isLoading, refetch } = useCompanies();
+  const deleteCompany = useDeleteCompany();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [isExportingXLSX, setIsExportingXLSX] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<{id: string, nome: string} | null>(null);
 
   const normalizeHeader = (h: unknown) =>
     String(h ?? "")
@@ -587,14 +600,27 @@ export default function AdminEmpresas() {
                       })()}
                     </TableCell>
                     <TableCell className="text-xs text-center whitespace-nowrap">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditCompany(company.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditCompany(company.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setCompanyToDelete({ id: company.id, nome: company.nome });
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -613,6 +639,36 @@ export default function AdminEmpresas() {
           Total: {filteredCompanies.length} empresa(s)
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a empresa <strong>{companyToDelete?.nome}</strong>?
+              Esta ação não pode ser desfeita e todos os beneficiários associados a esta empresa também serão removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (companyToDelete) {
+                  deleteCompany.mutate(companyToDelete.id, {
+                    onSuccess: () => {
+                      setDeleteDialogOpen(false);
+                      setCompanyToDelete(null);
+                    },
+                  });
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

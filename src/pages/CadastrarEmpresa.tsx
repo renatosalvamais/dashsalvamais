@@ -9,6 +9,8 @@ import { normalizeCompanyName, formatCNPJ } from "@/lib/utils";
 import { useProducts } from "@/hooks/useProducts";
 import { usePlanStore } from "@/lib/planStore";
 import { useCompany, useCreateCompany, useUpdateCompany } from "@/hooks/useCompanies";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Form,
   FormControl,
@@ -28,15 +30,17 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+const planEnum = z.enum(["BASICO", "INTERMEDIARIO", "AVANCADO", "SVA", "CUSTOMIZADO"]);
+
 const formSchema = z.object({
-  cnpj: z.string().min(1, "CNPJ é obrigatório"),
+  cnpj: z.string().min(14, "CNPJ deve ter 14 dígitos").refine((val) => val.replace(/\D/g, '').length === 14, "CNPJ inválido"),
   nomeEmpresa: z.string().min(1, "Nome da empresa é obrigatório"),
   endereco: z.string().min(1, "Endereço é obrigatório"),
   cidade: z.string().min(1, "Cidade é obrigatória"),
   contato: z.string().min(1, "Contato é obrigatório"),
   email: z.string().email("Email inválido"),
   telefone: z.string().min(1, "Telefone é obrigatório"),
-  tipoPlano: z.enum(["BASICO", "INTERMEDIARIO", "AVANCADO", "SVA", "CUSTOMIZADO"]),
+  tipoPlano: planEnum,
   desconto: z.string().min(1, "Desconto é obrigatório"),
   clubeDescontos: z.enum(["sim", "nao"]),
   clubeDescontosDependente: z.enum(["sim", "nao"]),
@@ -117,18 +121,18 @@ export default function CadastrarEmpresa() {
     if (editingCompany) {
       const beneficios = editingCompany.beneficios as any;
       // normaliza o valor do plano salvo (remove acentos e coloca em maiúsculas)
-      const normalizePlanoKey = (v: string | null | undefined) => {
-        if (!v) return "BASICO" as const;
+      const normalizePlanoKey = (v: string | null | undefined): z.infer<typeof planEnum> => {
+        if (!v) return "BASICO";
         const up = v.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         // mapeia nomes para chaves aceitas pelo enum
-        const map: Record<string, keyof typeof formSchema.shape.tipoPlano._def.innerType> = {
+        const map: Record<string, z.infer<typeof planEnum>> = {
           BASICO: "BASICO",
           INTERMEDIARIO: "INTERMEDIARIO",
           AVANCADO: "AVANCADO",
           SVA: "SVA",
           CUSTOMIZADO: "CUSTOMIZADO",
         };
-        return (map[up] || "BASICO") as const;
+        return map[up] || "BASICO";
       };
       form.reset({
         cnpj: editingCompany.cnpj,
@@ -218,7 +222,22 @@ export default function CadastrarEmpresa() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    // Validar CNPJ único (se não estiver editando ou se mudou o CNPJ)
+    const cnpjDigits = values.cnpj.replace(/\D/g, '');
+    const { data: existingCompanies } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('cnpj', values.cnpj);
+    
+    if (existingCompanies && existingCompanies.length > 0) {
+      // Se estamos editando e o CNPJ é da própria empresa, está ok
+      if (!editId || existingCompanies[0].id !== editId) {
+        toast.error('CNPJ já cadastrado no sistema');
+        return;
+      }
+    }
+
     const desconto = parseFloat(values.desconto) || 0;
     const valor = calculateTotal();
 
@@ -326,7 +345,15 @@ export default function CadastrarEmpresa() {
                     <FormItem>
                       <FormLabel>Nome da Empresa</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nome da empresa" {...field} />
+                        <Input 
+                          placeholder="Nome da empresa" 
+                          {...field}
+                          onChange={(e) => {
+                            const normalized = normalizeCompanyName(e.target.value);
+                            field.onChange(normalized);
+                          }}
+                          value={field.value}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
