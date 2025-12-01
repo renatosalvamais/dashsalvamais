@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Download, AlertTriangle, CheckCircle } from "lucide-react";
+import { Upload, Download, AlertTriangle, CheckCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCNPJ } from "@/lib/utils";
+import { useCompanies } from "@/hooks/useCompanies";
 
 type RowStatus = "pendente" | "sucesso" | "falha" | "parcial";
 
@@ -81,6 +82,27 @@ export default function AdminImportarPlanilha() {
   const [isReading, setIsReading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [summary, setSummary] = useState({ total: 0, empresas: 0, beneficiarios: 0, falha: 0, parcial: 0 });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showResults, setShowResults] = useState(false);
+  const { data: companies = [] } = useCompanies();
+  const [selectedEmpresa, setSelectedEmpresa] = useState<{
+    id: string;
+    nome: string;
+    cnpj: string;
+  } | null>(null);
+
+  const digitsOnly = (v: string) => v.replace(/\D/g, "");
+
+  const filteredEmpresas = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    const digitsQ = digitsOnly(searchTerm);
+    return companies
+      .filter((empresa) =>
+        empresa.nome.toLowerCase().includes(q) ||
+        empresa.cnpj.includes(digitsQ)
+      )
+      .map((e) => ({ id: e.id, nome: e.nome, cnpj: e.cnpj }));
+  }, [companies, searchTerm]);
 
   const headerSynonymsEmpresa: Record<string, string[]> = {
     cnpj: ["cnpj", "cnpj empresa", "cnpj_empresa"],
@@ -304,6 +326,10 @@ export default function AdminImportarPlanilha() {
 
   const handleImport = async () => {
     if (!selectedFile || rowsLog.length === 0) return;
+    if (!selectedEmpresa) {
+      toast.error("Selecione uma empresa antes de importar!");
+      return;
+    }
     setIsImporting(true);
     try {
       const buffer = await selectedFile.arrayBuffer();
