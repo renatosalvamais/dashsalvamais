@@ -68,8 +68,6 @@ export default function AdminPlanos() {
   };
 
   const addProduct = () => {
-    console.log("addProduct chamado", { newProduct });
-    
     if (!newProduct.name || !newProduct.name.trim()) {
       toast({ description: "Nome do produto é obrigatório", variant: "destructive" });
       return;
@@ -89,24 +87,14 @@ export default function AdminPlanos() {
     
     const maxOrder = products.length > 0 ? Math.max(...products.map(p => p.display_order || 0)) : 0;
     
-    console.log("Criando produto:", { 
-      name: newProduct.name, 
-      price: priceValue,
-      display_order: maxOrder + 1
-    });
-    
     createProduct.mutate({ 
       name: newProduct.name, 
       price: priceValue,
       display_order: maxOrder + 1
     }, {
       onSuccess: () => {
-        console.log("Produto criado com sucesso");
         setNewProduct({ name: "", price: "" });
         setShowNewProduct(false);
-      },
-      onError: (error) => {
-        console.error("Erro ao criar produto:", error);
       }
     });
   };
