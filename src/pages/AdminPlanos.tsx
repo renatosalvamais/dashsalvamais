@@ -68,17 +68,47 @@ export default function AdminPlanos() {
   };
 
   const addProduct = () => {
-    if (newProduct.name && newProduct.price) {
-      const priceValue = parseFloat(newProduct.price.replace(',', '.'));
-      const maxOrder = products.length > 0 ? Math.max(...products.map(p => p.display_order || 0)) : 0;
-      createProduct.mutate({ 
-        name: newProduct.name, 
-        price: priceValue,
-        display_order: maxOrder + 1
-      });
-      setNewProduct({ name: "", price: "" });
-      setShowNewProduct(false);
+    console.log("addProduct chamado", { newProduct });
+    
+    if (!newProduct.name || !newProduct.name.trim()) {
+      toast({ description: "Nome do produto é obrigatório", variant: "destructive" });
+      return;
     }
+    
+    if (!newProduct.price || !newProduct.price.trim()) {
+      toast({ description: "Preço é obrigatório", variant: "destructive" });
+      return;
+    }
+    
+    const priceValue = parseFloat(newProduct.price.replace(',', '.'));
+    
+    if (isNaN(priceValue)) {
+      toast({ description: "Preço inválido", variant: "destructive" });
+      return;
+    }
+    
+    const maxOrder = products.length > 0 ? Math.max(...products.map(p => p.display_order || 0)) : 0;
+    
+    console.log("Criando produto:", { 
+      name: newProduct.name, 
+      price: priceValue,
+      display_order: maxOrder + 1
+    });
+    
+    createProduct.mutate({ 
+      name: newProduct.name, 
+      price: priceValue,
+      display_order: maxOrder + 1
+    }, {
+      onSuccess: () => {
+        console.log("Produto criado com sucesso");
+        setNewProduct({ name: "", price: "" });
+        setShowNewProduct(false);
+      },
+      onError: (error) => {
+        console.error("Erro ao criar produto:", error);
+      }
+    });
   };
 
   const removeProduct = (id: string) => {
