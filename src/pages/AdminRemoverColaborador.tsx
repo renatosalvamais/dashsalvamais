@@ -2,35 +2,57 @@ import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Trash2 } from "lucide-react";
+import { Search, Trash2, UserX } from "lucide-react";
 import { toast } from "sonner";
-
-const colaboradoresData = [
-  {
-    nome: "JOAO DE SOUZA DA SILVA",
-    cpf: "607.773.270-23",
-  },
-  {
-    nome: "Joao Paulo Souza Dev",
-    cpf: "534.753.070-73",
-  },
-  {
-    nome: "LUIZ DOURADO DIAS JUNIOR",
-    cpf: "791.185.680-09",
-  },
-];
+import { useBeneficiaries, useDeleteBeneficiary } from "@/hooks/useBeneficiaries";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const AdminRemoverColaborador = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: beneficiaries = [], isLoading } = useBeneficiaries();
+  const deleteBeneficiary = useDeleteBeneficiary();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<{titular: any, dependentes: any[]}>({titular: null, dependentes: []});
 
-  const handleDelete = (nome: string) => {
-    toast.success(`${nome} foi removido com sucesso.`);
+  const digitsOnly = (v: string) => v.replace(/\D/g, "");
+
+  // Agrupar titulares com seus dependentes
+  const groupedBeneficiaries = () => {
+    const titulares = beneficiaries.filter(b => b.status === "titular" && !b.deleted_at);
+    return titulares.map(titular => {
+      const dependentes = beneficiaries.filter(b => 
+        b.status === "dependente" && 
+        b.company_id === titular.company_id &&
+        !b.deleted_at &&
+        // Aproximação: assumir que dependentes do mesmo titular estão próximos temporalmente
+        Math.abs(new Date(b.created_at || "").getTime() - new Date(titular.created_at || "").getTime()) < 60000
+      );
+      return { titular, dependentes };
+    });
   };
 
-  const filteredColaboradores = colaboradoresData.filter((colab) =>
-    colab.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    colab.cpf.includes(searchTerm)
+  const filteredGroups = groupedBeneficiaries().filter(group =>
+    group.titular.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    digitsOnly(group.titular.cpf).includes(digitsOnly(searchTerm))
   );
+
+  const handleDeleteGroup = async () => {
+    try {
+      // Deletar titular
+      await deleteBeneficiary.mutateAsync(selectedGroup.titular.id);
+      
+      // Deletar todos os dependentes
+      for (const dep of selectedGroup.dependentes) {
+        await deleteBeneficiary.mutateAsync(dep.id);
+      }
+      
+      toast.success(`${selectedGroup.titular.nome} e ${selectedGroup.dependentes.length} dependente(s) foram removidos.`);
+      setShowDeleteDialog(false);
+      setSelectedGroup({titular: null, dependentes: []});
+    } catch (e: any) {
+      toast.error("Erro ao remover: " + (e?.message || String(e)));
+    }
+  };
 
   return (
     <AdminLayout>
@@ -40,7 +62,7 @@ const AdminRemoverColaborador = () => {
             Remover Colaborador
           </h1>
           <p className="text-sm text-muted-foreground">
-            Busque e remova colaboradores do sistema
+            Busque e remova colaboradores (titular + dependentes) do sistema
           </p>
         </div>
 
@@ -53,7 +75,7 @@ const AdminRemoverColaborador = () => {
           </div>
 
           <p className="text-xs text-muted-foreground mb-4">
-            Buscar por nome, CPF ou e-mail
+            Buscar por nome ou CPF do titular
           </p>
 
           <div className="flex gap-3">
@@ -75,30 +97,88 @@ const AdminRemoverColaborador = () => {
             Lista de Colaboradores
           </h2>
 
-          <div className="space-y-3">
-            {filteredColaboradores.map((colab, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex-1">
-                  <div className="font-medium text-sm text-foreground">{colab.nome}</div>
-                  <div className="text-xs text-muted-foreground">CPF: {colab.cpf}</div>
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Carregando...</div>
+          ) : (
+            <div className="space-y-4">
+              {filteredGroups.length > 0 ? (
+                filteredGroups.map((group, index) => (
+                  <div
+                    key={index}
+                    className="p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-2">
+                        {/* Titular */}
+                        <div className="flex items-center gap-2">
+                          <UserX className="h-4 w-4 text-primary" />
+                          <div>
+                            <div className="font-semibold text-sm text-foreground">
+                              {group.titular.nome} <span className="text-xs text-muted-foreground">(Titular)</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">CPF: {group.titular.cpf}</div>
+                          </div>
+                        </div>
+
+                        {/* Dependentes */}
+                        {group.dependentes.length > 0 && (
+                          <div className="ml-6 space-y-1 pt-2 border-t border-border/50">
+                            <div className="text-xs font-medium text-muted-foreground mb-1">
+                              Dependentes ({group.dependentes.length}):
+                            </div>
+                            {group.dependentes.map((dep, depIdx) => (
+                              <div key={depIdx} className="text-xs text-muted-foreground ml-2">
+                                • {dep.nome} - CPF: {dep.cpf}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="gap-2 ml-4"
+                        onClick={() => {
+                          setSelectedGroup(group);
+                          setShowDeleteDialog(true);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Excluir Grupo
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Nenhum colaborador encontrado.
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => handleDelete(colab.nome)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Excluir
-                </Button>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Dialog de confirmação */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a remover <strong>{selectedGroup.titular?.nome}</strong> e 
+              <strong> {selectedGroup.dependentes.length} dependente(s)</strong> do sistema.
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteGroup} className="bg-destructive hover:bg-destructive/90">
+              Confirmar Exclusão
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
